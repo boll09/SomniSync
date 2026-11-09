@@ -85,11 +85,11 @@
     }
     .heat-wave-line { animation: float-up 2s infinite linear; }
     @keyframes snow-fall {
-      0% { transform: translateY(-15px); opacity: 0; }
+      0% { transform: translateY(-15px) rotate(0deg); opacity: 0; }
       50% { opacity: 0.9; }
-      100% { transform: translateY(18px); opacity: 0; }
+      100% { transform: translateY(18px) rotate(45deg); opacity: 0; }
     }
-    .cool-particle { animation: snow-fall 2.2s infinite linear; }
+    .cool-particle { animation: snow-fall 2.2s infinite linear; filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.8)); }
     .breath-circle-transition { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.6s ease; }
     input[type="range"] { accent-color: #14b8a6; }
   </style>
@@ -309,9 +309,14 @@
                 <span class="text-xs font-bold uppercase tracking-wider text-teal-300 flex items-center gap-1.5">
                   <i data-lucide="scan-face" class="w-4 h-4 text-teal-400"></i> 3. Biometric 3D Scanner
                 </span>
-                <div class="inline-flex rounded-lg bg-night-950 p-1 border border-slate-800">
-                  <button type="button" id="btnBodyStandard" class="px-2.5 py-1 rounded text-xs font-bold bg-teal-600 text-white transition">Standard Build</button>
-                  <button type="button" id="btnBodyAthletic" class="px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:text-white transition">Athletic / V-Taper</button>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-500/25 bg-teal-500/[0.06] px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-teal-300">
+                    <span class="h-1.5 w-1.5 rounded-full bg-teal-400 animate-pulse"></span> Live scan
+                  </span>
+                  <div class="inline-flex rounded-lg bg-night-950 p-1 border border-slate-800" role="group" aria-label="Avatar body composition">
+                    <button type="button" id="btnBodyStandard" aria-pressed="true" class="px-2.5 py-1 rounded text-xs font-bold bg-teal-600 text-white transition">Standard Build</button>
+                    <button type="button" id="btnBodyAthletic" aria-pressed="false" class="px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:text-white transition">Athletic / V-Taper</button>
+                  </div>
                 </div>
               </div>
 
@@ -336,8 +341,8 @@
                       <span id="hudRhrLive">58 BPM</span>
                     </div>
                     <div class="flex gap-1.5 mt-1">
-                      <button type="button" id="btnToggleAutoRotate" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-teal-300 border border-teal-500/30">360° Rotate</button>
-                      <button type="button" id="btnToggleWireframe" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">Wireframe</button>
+                      <button type="button" id="btnToggleAutoRotate" aria-pressed="true" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-teal-300 border border-teal-500/30 transition hover:bg-teal-950/80">360° Rotate</button>
+                      <button type="button" id="btnToggleWireframe" aria-pressed="false" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30 transition hover:bg-indigo-950/80">Wireframe</button>
                     </div>
                   </div>
                 </div>
@@ -349,7 +354,7 @@
                 </div>
 
                 <!-- Three.js Mount -->
-                <div id="avatar3DContainer" class="w-full h-[320px] cursor-grab active:cursor-grabbing"></div>
+                <div id="avatar3DContainer" role="img" aria-label="Interactive 3D biometric body scan. Drag horizontally to rotate the model." class="w-full h-[320px] cursor-grab active:cursor-grabbing touch-pan-y"></div>
 
                 <div class="px-3 py-2 bg-night-950/90 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
                   <span>Drag horizontally to rotate • Live Bio-Feedback Sync</span>
@@ -685,13 +690,13 @@
               </g>
 
               <!-- Cooling Particles (Visible when AUTO-PILOT Cooling to 19°C is active) -->
-              <g id="svgCoolParticles" class="hidden" fill="#38bdf8">
-                <circle cx="220" cy="85" r="3.5" class="cool-particle" />
-                <circle cx="275" cy="70" r="2.8" class="cool-particle" style="animation-delay: -0.6s" />
-                <circle cx="335" cy="82" r="3.5" class="cool-particle" style="animation-delay: -1.2s" />
-                <circle cx="400" cy="68" r="3" class="cool-particle" style="animation-delay: -0.4s" />
-                <circle cx="465" cy="80" r="3.5" class="cool-particle" style="animation-delay: -1.5s" />
-                <circle cx="525" cy="72" r="2.8" class="cool-particle" style="animation-delay: -0.9s" />
+              <g id="svgCoolParticles" class="hidden opacity-50">
+                <text x="220" y="85" fill="#38bdf8" font-size="14" class="cool-particle select-none">❄</text>
+                <text x="275" y="70" fill="#2dd4bf" font-size="11" class="cool-particle select-none" style="animation-delay: -0.6s">❅</text>
+                <text x="335" y="82" fill="#38bdf8" font-size="16" class="cool-particle select-none" style="animation-delay: -1.2s">❄</text>
+                <text x="400" y="68" fill="#a5f3fc" font-size="12" class="cool-particle select-none" style="animation-delay: -0.4s">❆</text>
+                <text x="465" y="80" fill="#38bdf8" font-size="15" class="cool-particle select-none" style="animation-delay: -1.5s">❄</text>
+                <text x="525" y="72" fill="#2dd4bf" font-size="11" class="cool-particle select-none" style="animation-delay: -0.9s">❅</text>
               </g>
 
               <!-- Articulated Head-Lift Group (Tilts from 0° to 15° around pivot x=300, y=148) -->
@@ -1306,69 +1311,154 @@
         const w = box.clientWidth || 340, h = box.clientHeight || 256;
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(36, w / h, 0.1, 100);
-        camera.position.set(0, 1.32, 4.9);
-        camera.lookAt(0, 1.15, 0);
+        const camera = new THREE.PerspectiveCamera(34, w / h, 0.1, 100);
+        camera.position.set(0, 1.28, 4.55);
+        camera.lookAt(0, 1.08, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(w, h);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.setClearColor(0x000000, 0);
         box.innerHTML = '';
         box.appendChild(renderer.domElement);
+        renderer.domElement.setAttribute('aria-hidden', 'true');
 
-        scene.add(new THREE.AmbientLight(0xcbd5e1, 0.8));
-        const keyLight = new THREE.DirectionalLight(0x2dd4bf, 1.35);
-        keyLight.position.set(3, 5, 4);
+        scene.add(new THREE.HemisphereLight(0xcaf7ef, 0x101833, 1.15));
+        const keyLight = new THREE.DirectionalLight(0x8fffea, 1.65);
+        keyLight.position.set(2.8, 4.5, 3.5);
         scene.add(keyLight);
+        const rimLight = new THREE.DirectionalLight(0x818cf8, 1.25);
+        rimLight.position.set(-3.5, 2.8, -2.5);
+        scene.add(rimLight);
 
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
-        const glowRing = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.06, 40), ringMat);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.58 });
+        const glowRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 0.96, 72), ringMat);
         glowRing.rotation.x = -Math.PI / 2;
+        glowRing.position.y = 0.025;
         scene.add(glowRing);
+        const innerRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.69, 0.705, 64),
+          new THREE.MeshBasicMaterial({ color: 0x6366f1, side: THREE.DoubleSide, transparent: true, opacity: 0.32 })
+        );
+        innerRing.rotation.x = -Math.PI / 2;
+        innerRing.position.y = 0.028;
+        scene.add(innerRing);
 
-        const laserMat = new THREE.MeshBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.55 });
-        const laser = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.011, 10, 40), laserMat);
+        const laserMat = new THREE.MeshBasicMaterial({ color: 0x67f7df, transparent: true, opacity: 0.72 });
+        const laser = new THREE.Mesh(new THREE.TorusGeometry(0.74, 0.009, 8, 64), laserMat);
         laser.rotation.x = Math.PI / 2;
         scene.add(laser);
 
-        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x14b8a6, emissive: 0x0f766e, emissiveIntensity: 0.35, shininess: 65, transparent: true, opacity: 0.86 });
-        const jointMat = new THREE.MeshPhongMaterial({ color: 0x6366f1, emissive: 0x312e81, emissiveIntensity: 0.45, transparent: true, opacity: 0.9 });
-        const heartMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
-        const brainMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
+        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x14b8a6, emissive: 0x0f766e, emissiveIntensity: 0.22, shininess: 82, specular: 0x9ffff0, transparent: true, opacity: 0.78 });
+        const detailMat = new THREE.MeshPhongMaterial({ color: 0x5eead4, emissive: 0x0f766e, emissiveIntensity: 0.3, shininess: 70, transparent: true, opacity: 0.78 });
+        const featureMat = new THREE.MeshBasicMaterial({ color: 0x0b2637, transparent: true, opacity: 0.8 });
+        const heartMat = new THREE.MeshBasicMaterial({ color: 0xfb7185 });
+        const brainMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 });
 
         const root = new THREE.Group();
         scene.add(root);
-        const seg = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); root.add(m); return m; };
+        const addMesh = (parent, geometry, material, x, y, z) => {
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, y, z);
+          parent.add(mesh);
+          return mesh;
+        };
+        const unitSphere = new THREE.SphereGeometry(1, 32, 24);
+        const softShape = (parent, x, y, z, sx, sy, sz, material = bodyMat) => {
+          const mesh = addMesh(parent, unitSphere, material, x, y, z);
+          mesh.scale.set(sx, sy, sz);
+          return mesh;
+        };
 
-        const lCalf = seg(new THREE.CylinderGeometry(0.08, 0.056, 0.46, 18), bodyMat, -0.17, 0.27, 0);
-        const rCalf = seg(new THREE.CylinderGeometry(0.08, 0.056, 0.46, 18), bodyMat, 0.17, 0.27, 0);
-        seg(new THREE.BoxGeometry(0.11, 0.06, 0.22), jointMat, -0.17, 0.03, 0.03);
-        seg(new THREE.BoxGeometry(0.11, 0.06, 0.22), jointMat, 0.17, 0.03, 0.03);
-        const lThigh = seg(new THREE.CylinderGeometry(0.12, 0.085, 0.48, 20), bodyMat, -0.175, 0.75, 0);
-        const rThigh = seg(new THREE.CylinderGeometry(0.12, 0.085, 0.48, 20), bodyMat, 0.175, 0.75, 0);
-        const pelvis = seg(new THREE.CylinderGeometry(0.24, 0.22, 0.2, 22), bodyMat, 0, 1.02, 0);
-        const waist = seg(new THREE.CylinderGeometry(0.24, 0.24, 0.3, 24), bodyMat, 0, 1.24, 0);
-        const belly = seg(new THREE.SphereGeometry(0.235, 24, 20), bodyMat, 0, 1.22, 0.02);
-        const chest = seg(new THREE.CylinderGeometry(0.29, 0.24, 0.34, 24), bodyMat, 0, 1.54, 0);
-        const heart = seg(new THREE.SphereGeometry(0.072, 18, 18), heartMat, 0.04, 1.55, 0.14);
-        const lShoulder = seg(new THREE.SphereGeometry(0.1, 16, 16), jointMat, -0.35, 1.66, 0);
-        const rShoulder = seg(new THREE.SphereGeometry(0.1, 16, 16), jointMat, 0.35, 1.66, 0);
-        const lArm = seg(new THREE.CylinderGeometry(0.076, 0.056, 0.62, 16), bodyMat, -0.39, 1.32, 0);
-        const rArm = seg(new THREE.CylinderGeometry(0.076, 0.056, 0.62, 16), bodyMat, 0.39, 1.32, 0);
-        seg(new THREE.CylinderGeometry(0.074, 0.086, 0.12, 16), jointMat, 0, 1.76, 0);
-        const head = seg(new THREE.SphereGeometry(0.162, 22, 22), bodyMat, 0, 1.96, 0);
-        const brain = seg(new THREE.SphereGeometry(0.095, 16, 16), brainMat, 0, 1.99, 0.02);
+        const lCalf = softShape(root, -0.15, 0.29, 0, 0.081, 0.255, 0.09);
+        const rCalf = softShape(root, 0.15, 0.29, 0, 0.081, 0.255, 0.09);
+        const lThigh = softShape(root, -0.145, 0.72, 0, 0.116, 0.33, 0.125);
+        const rThigh = softShape(root, 0.145, 0.72, 0, 0.116, 0.33, 0.125);
+        softShape(root, -0.15, 0.445, 0.005, 0.084, 0.09, 0.094, detailMat);
+        softShape(root, 0.15, 0.445, 0.005, 0.084, 0.09, 0.094, detailMat);
+        softShape(root, -0.15, 0.075, 0.075, 0.108, 0.065, 0.18);
+        softShape(root, 0.15, 0.075, 0.075, 0.108, 0.065, 0.18);
 
-        this.parts = { root, lCalf, rCalf, lThigh, rThigh, pelvis, waist, belly, chest, heart, lShoulder, rShoulder, lArm, rArm, head, brain, laser };
-        this.mats = { bodyMat, jointMat, heartMat, brainMat, ringMat, laserMat };
+        const pelvis = softShape(root, 0, 0.99, 0, 0.235, 0.18, 0.155);
+        const torsoGeometry = new THREE.LatheGeometry([
+          new THREE.Vector2(0, 0.99),
+          new THREE.Vector2(0.16, 0.99),
+          new THREE.Vector2(0.225, 1.04),
+          new THREE.Vector2(0.235, 1.12),
+          new THREE.Vector2(0.205, 1.24),
+          new THREE.Vector2(0.19, 1.36),
+          new THREE.Vector2(0.235, 1.49),
+          new THREE.Vector2(0.285, 1.59),
+          new THREE.Vector2(0.29, 1.65),
+          new THREE.Vector2(0.245, 1.69),
+          new THREE.Vector2(0.15, 1.72),
+          new THREE.Vector2(0.105, 1.72),
+          new THREE.Vector2(0, 1.72)
+        ], 48);
+        torsoGeometry.computeVertexNormals();
+        const torso = addMesh(root, torsoGeometry, bodyMat, 0, 0, 0);
+
+        const lShoulder = softShape(root, -0.265, 1.59, 0, 0.125, 0.125, 0.12);
+        const rShoulder = softShape(root, 0.265, 1.59, 0, 0.125, 0.125, 0.12);
+        const lArm = softShape(root, -0.325, 1.34, 0.005, 0.086, 0.255, 0.09);
+        const rArm = softShape(root, 0.325, 1.34, 0.005, 0.086, 0.255, 0.09);
+        lArm.rotation.z = 0.13;
+        rArm.rotation.z = -0.13;
+        const lForearm = softShape(root, -0.36, 1.035, 0.015, 0.072, 0.22, 0.078);
+        const rForearm = softShape(root, 0.36, 1.035, 0.015, 0.072, 0.22, 0.078);
+        const lHand = softShape(root, -0.39, 0.79, 0.035, 0.07, 0.11, 0.075, detailMat);
+        const rHand = softShape(root, 0.39, 0.79, 0.035, 0.07, 0.11, 0.075, detailMat);
+        softShape(root, 0, 1.765, 0, 0.09, 0.105, 0.09, detailMat);
+
+        const head = softShape(root, 0, 1.965, 0.005, 0.144, 0.184, 0.13);
+        const hairGeometry = new THREE.SphereGeometry(1, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.48);
+        const hair = softShape(root, 0, 2.014, -0.007, 0.149, 0.166, 0.136, detailMat);
+        hair.geometry = hairGeometry;
+        const lEye = softShape(root, -0.047, 1.979, 0.126, 0.012, 0.009, 0.006, featureMat);
+        const rEye = softShape(root, 0.047, 1.979, 0.126, 0.012, 0.009, 0.006, featureMat);
+        softShape(root, 0, 1.941, 0.137, 0.014, 0.026, 0.018, detailMat);
+        softShape(root, -0.146, 1.958, 0.004, 0.025, 0.043, 0.028, detailMat);
+        softShape(root, 0.146, 1.958, 0.004, 0.025, 0.043, 0.028, detailMat);
+        softShape(root, 0, 1.91, 0.126, 0.024, 0.006, 0.006, featureMat);
+
+        const heart = softShape(root, 0.055, 1.49, 0.221, 0.054, 0.058, 0.04, heartMat);
+        const brain = softShape(root, 0, 2.025, 0.084, 0.068, 0.07, 0.035, brainMat);
+
+        this.parts = { root, torso, pelvis, lCalf, rCalf, lThigh, rThigh, heart, lShoulder, rShoulder, lArm, rArm, lForearm, rForearm, lHand, rHand, head, brain, hair, lEye, rEye, laser, glowRing, innerRing };
+        this.mats = { bodyMat, detailMat, featureMat, heartMat, brainMat, ringMat, laserMat };
 
         let drag = false, px = 0;
-        box.addEventListener('mousedown', e => { drag = true; px = e.clientX; });
-        window.addEventListener('mousemove', e => { if (drag) { root.rotation.y += (e.clientX - px) * 0.012; px = e.clientX; } });
-        window.addEventListener('mouseup', () => drag = false);
-        box.addEventListener('touchstart', e => { if (e.touches[0]) { drag = true; px = e.touches[0].clientX; } }, { passive: true });
-        box.addEventListener('touchmove', e => { if (drag && e.touches[0]) { root.rotation.y += (e.touches[0].clientX - px) * 0.012; px = e.touches[0].clientX; } }, { passive: true });
-        box.addEventListener('touchend', () => drag = false);
+        box.addEventListener('pointerdown', e => {
+          if (e.button !== undefined && e.button !== 0) return;
+          drag = true;
+          px = e.clientX;
+          box.classList.add('cursor-grabbing');
+          if (box.setPointerCapture && e.pointerId !== undefined) box.setPointerCapture(e.pointerId);
+        });
+        box.addEventListener('pointermove', e => {
+          if (!drag) return;
+          root.rotation.y += (e.clientX - px) * 0.012;
+          px = e.clientX;
+        });
+        const finishDrag = () => {
+          drag = false;
+          box.classList.remove('cursor-grabbing');
+        };
+        box.addEventListener('pointerup', finishDrag);
+        box.addEventListener('pointercancel', finishDrag);
+
+        if (typeof ResizeObserver !== 'undefined') {
+          this.resizeObserver = new ResizeObserver(entries => {
+            const rect = entries[0] && entries[0].contentRect;
+            if (!rect || rect.width <= 0 || rect.height <= 0) return;
+            camera.aspect = rect.width / rect.height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(rect.width, rect.height, false);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          });
+          this.resizeObserver.observe(box);
+        }
 
         const clock = new THREE.Clock();
         const animate = () => {
@@ -1392,31 +1482,37 @@
           c.hx += ((ath ? 0.98 + d * 0.3 : 1 + d * 0.65) - c.hx) * 0.12;
           c.limb += ((ath ? 1.05 + d * 0.45 : 1 + d * 0.55) - c.limb) * 0.12;
 
-          p.chest.scale.set(c.cx, 1, c.cz);
-          p.waist.scale.set(c.wx, 1, c.bz * 0.9);
-          p.belly.scale.set(c.wx * 1.04, 1.02, c.bz * 1.08);
-          p.belly.position.z = 0.02 + c.bo;
-          p.pelvis.scale.set(c.hx, 1, c.hx * 0.95);
+          p.torso.scale.set(c.cx * c.wx, 1, c.cz * c.bz);
+          p.torso.position.z = c.bo * 0.3;
+          p.pelvis.scale.set(0.235 * c.hx * c.wx, 0.18, 0.155 * c.hx * c.bz * 0.95);
 
           const span = 0.34 * Math.max(0.92, c.cx * 0.95);
-          p.lShoulder.position.x = -span; p.rShoulder.position.x = span;
-          p.lArm.position.x = -(span + 0.04); p.rArm.position.x = span + 0.04;
-          p.lArm.scale.set(c.limb * 0.92, 1, c.limb * 0.92);
-          p.rArm.scale.set(c.limb * 0.92, 1, c.limb * 0.92);
-          p.lThigh.scale.set(c.limb, 1, c.limb); p.rThigh.scale.set(c.limb, 1, c.limb);
-          p.lCalf.scale.set(c.limb * 0.9, 1, c.limb * 0.9); p.rCalf.scale.set(c.limb * 0.9, 1, c.limb * 0.9);
+          p.lShoulder.position.x = -span * 0.78; p.rShoulder.position.x = span * 0.78;
+          p.lArm.position.x = -(span * 0.96); p.rArm.position.x = span * 0.96;
+          p.lArm.scale.set(0.086 * c.limb * 0.88, 0.255, 0.09 * c.limb * 0.88);
+          p.rArm.scale.set(0.086 * c.limb * 0.88, 0.255, 0.09 * c.limb * 0.88);
+          p.lForearm.scale.set(0.072 * c.limb * 0.9, 0.22, 0.078 * c.limb * 0.9);
+          p.rForearm.scale.set(0.072 * c.limb * 0.9, 0.22, 0.078 * c.limb * 0.9);
+          p.lHand.scale.set(0.07 * c.limb, 0.11, 0.075 * c.limb);
+          p.rHand.scale.set(0.07 * c.limb, 0.11, 0.075 * c.limb);
+          p.lThigh.scale.set(0.116 * c.limb, 0.33, 0.125 * c.limb);
+          p.rThigh.scale.set(0.116 * c.limb, 0.33, 0.125 * c.limb);
+          p.lCalf.scale.set(0.081 * c.limb * 0.9, 0.255, 0.09 * c.limb * 0.9);
+          p.rCalf.scale.set(0.081 * c.limb * 0.9, 0.255, 0.09 * c.limb * 0.9);
 
           const activeBpm = tg.strokeLevel === 'HIGH' ? Math.max(tg.rhr, tg.peakHr) : tg.rhr;
           const pulse = 1 + 0.28 * Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * (activeBpm / 60))), 4);
-          p.heart.scale.set(pulse, pulse, pulse);
-          p.heart.position.z = 0.14 * c.cz;
+          p.heart.position.z = 0.221 * c.cz + c.bo * 0.3;
+          p.heart.scale.set(0.054 * pulse, 0.058 * pulse, 0.04 * pulse);
           if (tg.strokeLevel === 'HIGH') {
-            p.brain.scale.set(pulse * 1.1, pulse * 1.1, pulse * 1.1);
+            p.brain.scale.set(0.068 * pulse * 1.1, 0.07 * pulse * 1.1, 0.035 * pulse);
           } else {
-            p.brain.scale.set(1, 1, 1);
+            p.brain.scale.set(0.068, 0.07, 0.035);
           }
 
           p.laser.position.y = (Math.sin(t * 1.4) * 0.5 + 0.5) * 2.04 * c.h;
+          p.glowRing.material.opacity = 0.48 + Math.sin(t * 1.5) * 0.1;
+          p.innerRing.rotation.z = t * 0.12;
           if (this.autoRotate && !drag) p.root.rotation.y += 0.0065;
           renderer.render(scene, camera);
         };
@@ -2032,21 +2128,30 @@
       bindPair('weight', 'weightSlider');
       ['rhr', 'peakHr', 'sysBp', 'snoringDb', 'soreness'].forEach(id => $(id)?.addEventListener('input', () => Avatar3D.syncFromInputs()));
 
-      $('btnToggleAutoRotate')?.addEventListener('click', () => Avatar3D.autoRotate = !Avatar3D.autoRotate);
+      $('btnToggleAutoRotate')?.addEventListener('click', () => {
+        Avatar3D.autoRotate = !Avatar3D.autoRotate;
+        $('btnToggleAutoRotate').setAttribute('aria-pressed', String(Avatar3D.autoRotate));
+      });
       $('btnToggleWireframe')?.addEventListener('click', () => {
         Avatar3D.wireframe = !Avatar3D.wireframe;
         Avatar3D.mats.bodyMat.wireframe = Avatar3D.wireframe;
+        Avatar3D.mats.detailMat.wireframe = Avatar3D.wireframe;
+        $('btnToggleWireframe').setAttribute('aria-pressed', String(Avatar3D.wireframe));
       });
       $('btnBodyStandard')?.addEventListener('click', () => {
         Avatar3D.composition = 'standard';
         $('btnBodyStandard').className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white';
         $('btnBodyAthletic').className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400';
+        $('btnBodyStandard').setAttribute('aria-pressed', 'true');
+        $('btnBodyAthletic').setAttribute('aria-pressed', 'false');
         Avatar3D.syncFromInputs();
       });
       $('btnBodyAthletic')?.addEventListener('click', () => {
         Avatar3D.composition = 'athletic';
         $('btnBodyAthletic').className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white';
         $('btnBodyStandard').className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400';
+        $('btnBodyAthletic').setAttribute('aria-pressed', 'true');
+        $('btnBodyStandard').setAttribute('aria-pressed', 'false');
         Avatar3D.syncFromInputs();
       });
 

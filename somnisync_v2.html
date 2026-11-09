@@ -9,7 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <!-- Tailwind Configuration -->
   <script>
@@ -181,12 +181,13 @@
     }
 
     @keyframes coolSink {
-      0% { transform: translateY(-16px); opacity: 0; }
-      50% { opacity: 0.95; }
-      100% { transform: translateY(22px); opacity: 0; }
+      0% { transform: translateY(-16px) rotate(0deg); opacity: 0; }
+      40% { opacity: 0.95; }
+      100% { transform: translateY(24px) rotate(60deg); opacity: 0; }
     }
     .cool-particle {
       animation: coolSink 2.4s infinite linear;
+      filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.9));
     }
 
     /* Range Sliders */
@@ -237,7 +238,7 @@
 <body class="relative text-slate-100 min-h-screen pb-16 selection:bg-teal-400 selection:text-night-950">
 
   <!-- Ambient Three.js 3D Background Canvas -->
-  <div id="threeBackgroundContainer" class="fixed inset-0 pointer-events-none z-0 opacity-40"></div>
+  <div id="threeBackgroundContainer" class="fixed inset-0 pointer-events-none -z-10 opacity-55"></div>
 
   <!-- Ambient Circadian Aura Glows -->
   <div class="fixed top-0 left-1/4 w-[600px] h-[350px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
@@ -269,32 +270,38 @@
               Stroke Guard AI
             </span>
           </div>
-          <p class="text-[11px] text-slate-400 font-medium">Autonomous Bio-Intelligent Smart Mattress • Academic Thesis Defense</p>
+          <p class="text-[11px] text-slate-400 font-medium">Smart mattress · Nocturnal monitoring</p>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="flex items-center gap-1 sm:gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-md">
-        <button type="button" onclick="App.switchTab('live-monitor')" data-tab="live-monitor" class="tab-nav-btn active px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+      <nav class="flex items-center gap-1 sm:gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-md w-full sm:w-auto max-w-full overflow-x-auto whitespace-nowrap">
+        <button type="button" onclick="App.switchTab('live-monitor')" data-tab="live-monitor" class="tab-nav-btn active shrink-0 px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
           <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
           </svg>
           <span>Live Monitor</span>
         </button>
-        <button type="button" onclick="App.switchTab('analytics')" data-tab="analytics" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+        <button type="button" onclick="App.switchTab('analytics')" data-tab="analytics" class="tab-nav-btn shrink-0 px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
           <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"/>
             <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"/>
           </svg>
           <span>Analytics</span>
         </button>
-        <button type="button" onclick="App.switchTab('sleep-lab')" data-tab="sleep-lab" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+        <button type="button" onclick="App.switchTab('biometric-scan')" data-tab="biometric-scan" class="tab-nav-btn shrink-0 px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75a4.5 4.5 0 00-4.5 4.5v2.25m9 0V8.25a4.5 4.5 0 00-4.5-4.5m-6 7.5v2.25a6 6 0 0012 0V11.25m-9 0v3a3 3 0 006 0v-3m-9 6.75a9 9 0 0012 0"/>
+          </svg>
+          <span>Bio Scan</span>
+        </button>
+        <button type="button" onclick="App.switchTab('sleep-lab')" data-tab="sleep-lab" class="tab-nav-btn shrink-0 px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
           <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <span>Sleep Lab</span>
         </button>
-        <button type="button" onclick="App.switchTab('history')" data-tab="history" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+        <button type="button" onclick="App.switchTab('history')" data-tab="history" class="tab-nav-btn shrink-0 px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
           <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
           </svg>
@@ -333,16 +340,16 @@
             <span class="text-xl">🚨</span>
             <div>
               <div class="text-xs sm:text-sm font-black tracking-wide text-rose-200">
-                CRITICAL NOCTURNAL DISTRESS: Emergency Dispatch in <span id="statusBarCountdown" class="text-white font-mono font-black text-base underline">15</span>s
+                EMERGENCY CALL IN <span id="statusBarCountdown" class="text-white font-mono font-black text-base underline">15</span>s
               </div>
-              <p class="text-[11px] text-rose-300">Continuous tachycardia (>135 BPM) and hyperthermic surge detected. Intervene or system auto-acts.</p>
+              <p class="text-[11px] text-rose-300">High heart rate detected. Cancel or allow the emergency call in 15 seconds.</p>
             </div>
           </div>
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <div class="w-full sm:w-36 h-2 bg-rose-900/60 rounded-full overflow-hidden border border-rose-500/40">
               <div id="statusBarProgress" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%;"></div>
             </div>
-            <button type="button" onclick="StateMachine.cancelEmergency()" class="px-3 py-1 rounded-lg bg-rose-800 hover:bg-rose-700 text-white text-xs font-bold transition shadow">
+            <button type="button" id="topEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="min-h-11 shrink-0 px-4 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white text-xs font-black transition shadow-lg shadow-rose-950/40" aria-label="Cancel emergency call countdown">
               Abort / Cancel
             </button>
           </div>
@@ -358,11 +365,11 @@
               <div class="flex items-center gap-2">
                 <span id="bannerStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
                 <span id="bannerStatusTitle" class="text-xs sm:text-sm font-extrabold uppercase tracking-wide text-emerald-400">
-                  STEP 1 — SENSE: Contactless biometric monitoring active
+                  Monitoring active
                 </span>
               </div>
               <p id="bannerStatusDesc" class="text-xs text-slate-400 mt-0.5">
-                Zero wearables. 60 GHz mmWave radar & piezoceramic sensors continuously track cardiopulmonary metrics.
+                Contact-free heart and breathing monitoring.
               </p>
             </div>
           </div>
@@ -370,17 +377,17 @@
           <!-- Right: 4 Scenario Buttons -->
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" onclick="StateMachine.setState('normal')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/[0.05] hover:bg-white/[0.1] text-teal-300 border border-teal-500/30 transition flex items-center gap-1.5">
-              <span>🟢 Step 1: Sense</span>
+              <span>🟢 Monitor</span>
             </button>
             <button type="button" onclick="StateMachine.setState('emergency')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/50 transition flex items-center gap-1.5 shadow-lg shadow-rose-950/30">
               <span class="animate-bounce">🚨</span>
-              <span>03:00 AM Distress</span>
+              <span>Simulate alert</span>
             </button>
             <button type="button" onclick="StateMachine.setState('autopilot')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-400/50 transition flex items-center gap-1.5">
-              <span>🤖 Auto-Pilot</span>
+              <span>🤖 Auto-pilot</span>
             </button>
             <button type="button" onclick="StateMachine.setState('morning')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border border-emerald-400/50 transition flex items-center gap-1.5">
-              <span>🌅 Morning Summary</span>
+              <span>🌅 Morning report</span>
             </button>
           </div>
         </div>
@@ -403,10 +410,10 @@
                   <span id="hrDot" class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
                   Heart Rate
                 </span>
-                <span class="text-[10px] text-slate-400">mmWave</span>
+                <span class="text-[10px] text-slate-400">Sensor</span>
               </div>
               <div id="bedLiveHr" class="text-xl sm:text-2xl font-black font-mono text-white mt-1">68 bpm</div>
-              <div id="bedLiveHrSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Normal sinus rhythm</div>
+              <div id="bedLiveHrSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Normal</div>
             </div>
 
             <!-- Mattress Temp / Blood Pressure Card -->
@@ -419,7 +426,7 @@
                 <span id="bedLiveBp" class="text-[10px] font-mono text-slate-300">BP: 118/76</span>
               </div>
               <div id="bedLiveTemp" class="text-xl sm:text-2xl font-black font-mono text-amber-300 mt-1">24.0 °C</div>
-              <div id="bedLiveTempSub" class="text-[10px] text-slate-400 font-semibold mt-0.5">Optimal Thermal Comfort</div>
+              <div id="bedLiveTempSub" class="text-[10px] text-slate-400 font-semibold mt-0.5">Comfortable</div>
             </div>
 
             <!-- Snoring / Breathing Card -->
@@ -427,12 +434,12 @@
               <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
                 <span class="flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                  Acoustic & Airway
+                  Breathing
                 </span>
                 <span id="bedLiveBreathRate" class="text-[10px] font-mono text-slate-300">14 br/min</span>
               </div>
               <div id="bedLiveSnoring" class="text-xl sm:text-2xl font-black font-mono text-sky-300 mt-1">36 dB</div>
-              <div id="bedLiveSnoringSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Clear Airway (&lt;55 dB)</div>
+              <div id="bedLiveSnoringSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Quiet breathing</div>
             </div>
 
           </div>
@@ -481,14 +488,14 @@
                 <path d="M500,115 Q492,95 504,75 T500,35" class="heat-wave-line" style="animation-delay: -1.6s;" />
               </g>
 
-              <!-- COOLING PARTICLES (Visible during Auto-Pilot cooling) -->
-              <g id="svgCoolParticles" class="hidden" fill="#00d4aa">
-                <circle cx="210" cy="85" r="3.2" class="cool-particle" />
-                <circle cx="265" cy="70" r="2.8" class="cool-particle" style="animation-delay: -0.5s;" />
-                <circle cx="325" cy="82" r="3.2" class="cool-particle" style="animation-delay: -1.1s;" />
-                <circle cx="390" cy="68" r="3.0" class="cool-particle" style="animation-delay: -0.3s;" />
-                <circle cx="455" cy="80" r="3.2" class="cool-particle" style="animation-delay: -1.4s;" />
-                <circle cx="515" cy="72" r="2.6" class="cool-particle" style="animation-delay: -0.8s;" />
+              <!-- COOLING PARTICLES (Visible during Auto-Pilot cooling - Soft & Translucent) -->
+              <g id="svgCoolParticles" class="hidden opacity-50">
+                <text x="210" y="85" fill="#38bdf8" font-size="14" class="cool-particle select-none">❄</text>
+                <text x="265" y="70" fill="#00d4aa" font-size="11" class="cool-particle select-none" style="animation-delay: -0.5s;">❅</text>
+                <text x="325" y="82" fill="#38bdf8" font-size="16" class="cool-particle select-none" style="animation-delay: -1.1s;">❄</text>
+                <text x="390" y="68" fill="#a5f3fc" font-size="12" class="cool-particle select-none" style="animation-delay: -0.3s;">❆</text>
+                <text x="455" y="80" fill="#38bdf8" font-size="15" class="cool-particle select-none" style="animation-delay: -1.4s;">❄</text>
+                <text x="515" y="72" fill="#00d4aa" font-size="11" class="cool-particle select-none" style="animation-delay: -0.8s;">❅</text>
               </g>
 
               <!-- ARTICULATED HEAD-LIFT GROUP (Tilts from 0° to 15° around pivot x=300, y=148) -->
@@ -546,7 +553,7 @@
               <!-- SENSOR LAYER CALLOUT BOX -->
               <g id="svgSensorCallout">
                 <rect x="460" y="42" width="165" height="26" rx="6" fill="#0d1b2a" stroke="#00d4aa" stroke-width="1.2" />
-                <text x="542" y="59" fill="#99f6e4" font-size="11" font-weight="700" text-anchor="middle">mmWave Radar Array (60 GHz)</text>
+                <text x="542" y="59" fill="#99f6e4" font-size="11" font-weight="700" text-anchor="middle">Contact-free sensor</text>
                 <line x1="510" y1="68" x2="510" y2="145" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3,3" />
                 <line x1="570" y1="68" x2="570" y2="145" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3,3" />
               </g>
@@ -604,17 +611,17 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-white/10 text-xs">
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-teal-400"></span>
-              <span class="text-slate-400">mmWave Radar:</span>
+              <span class="text-slate-400">Sensor:</span>
               <span class="font-bold text-slate-200">60 GHz Active</span>
             </div>
             <div class="flex items-center gap-2">
               <span id="actuatorStatusDot" class="w-2 h-2 rounded-full bg-indigo-400"></span>
-              <span class="text-slate-400">Head Actuator:</span>
+              <span class="text-slate-400">Head lift:</span>
               <span id="actuatorStatusText" class="font-bold text-slate-200">0° (Flat)</span>
             </div>
             <div class="flex items-center gap-2">
               <span id="hydroStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
-              <span class="text-slate-400">Hydro-Matrix:</span>
+              <span class="text-slate-400">Cooling:</span>
               <span id="hydroStatusText" class="font-bold text-slate-200">Standby (24°C)</span>
             </div>
           </div>
@@ -634,8 +641,8 @@
                   </svg>
                 </span>
                 <div>
-                  <h3 class="text-sm font-extrabold text-white">Smart Bed Actuators</h3>
-                  <p class="text-[10px] text-slate-400">Dual Closed-Loop Controls</p>
+                  <h3 class="text-sm font-extrabold text-white">Bed controls</h3>
+                  <p class="text-[10px] text-slate-400">Cooling & head lift</p>
                 </div>
               </div>
               <span id="autoPilotBadge" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
@@ -650,7 +657,7 @@
                   <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3"/>
                   </svg>
-                  Hydro-Thermal Core
+                  Mattress cooling
                 </span>
                 <span id="tempSliderVal" class="text-sm font-mono font-black text-amber-300">24.0°C</span>
               </div>
@@ -658,21 +665,21 @@
               <input type="range" id="tempSlider" min="16" max="31" step="0.5" value="24" oninput="MattressControls.setTemp(this.value)" class="w-full">
               
               <div class="flex items-center justify-between text-[10px] text-slate-400">
-                <span>16°C (Rapid Cool)</span>
-                <span>24°C (Neutral)</span>
-                <span>31°C (Warm)</span>
+                <span>16°C</span>
+                <span>24°C</span>
+                <span>31°C</span>
               </div>
 
               <!-- Quick Presets -->
               <div class="grid grid-cols-3 gap-2 pt-1">
                 <button type="button" onclick="MattressControls.setTemp(19)" class="py-1 px-2 rounded-lg bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 text-[10px] font-semibold text-sky-300 transition">
-                  19°C Neuro-Cool
+                  19°C Cool
                 </button>
                 <button type="button" onclick="MattressControls.setTemp(24)" class="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[10px] font-semibold text-slate-300 transition">
                   24°C Neutral
                 </button>
                 <button type="button" onclick="MattressControls.setTemp(31)" class="py-1 px-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-500/30 text-[10px] font-semibold text-rose-300 transition">
-                  31°C Heat Surge
+                  31°C Warm
                 </button>
               </div>
             </div>
@@ -684,7 +691,7 @@
                   <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/>
                   </svg>
-                  Head Lift Elevation
+                  Head lift
                 </span>
                 <span id="angleSliderVal" class="text-sm font-mono font-black text-indigo-300">0°</span>
               </div>
@@ -692,9 +699,9 @@
               <input type="range" id="angleSlider" min="0" max="15" step="1" value="0" oninput="MattressControls.setAngle(this.value)" class="w-full">
 
               <div class="flex items-center justify-between text-[10px] text-slate-400">
-                <span>0° (Flat)</span>
-                <span>6° (Snore Relief)</span>
-                <span>12°-15° (Stroke Guard)</span>
+                <span>0° Flat</span>
+                <span>6° Relief</span>
+                <span>12°-15° Guard</span>
               </div>
 
               <!-- Angle Presets -->
@@ -703,29 +710,29 @@
                   0° Flat
                 </button>
                 <button type="button" onclick="MattressControls.setAngle(6)" class="py-1 px-2 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 transition">
-                  6° Anti-Snore
+                  6° Relief
                 </button>
                 <button type="button" onclick="MattressControls.setAngle(12)" class="py-1 px-2 rounded-lg bg-teal-950/60 hover:bg-teal-900 border border-teal-500/30 text-[10px] font-semibold text-teal-300 transition">
-                  12° Stroke Guard
+                  12° Guard
                 </button>
               </div>
             </div>
 
           </div>
 
-          <!-- Medical Explanation Box (Thesis Defense Rigor) -->
+          <!-- Intervention summary -->
           <div class="p-3.5 rounded-xl bg-deep-950/80 border border-indigo-500/25 space-y-2 text-xs">
             <div class="flex items-center gap-1.5 font-bold text-indigo-300 text-[11px] uppercase tracking-wider">
               <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
               </svg>
-              <span>Clinical Intervention Protocol</span>
+              <span>Intervention summary</span>
             </div>
             <p class="text-[11px] text-slate-300 leading-relaxed">
-              <strong class="text-sky-300">1. Hypothermic Neuroprotection (19°C):</strong> Rapid capillary cooling reduces cerebral metabolic rate of oxygen (CMRO₂) by ~5% per °C, mitigating hypoxic tissue necrosis during nocturnal ischemia.
+              <strong class="text-sky-300">Cooling · 19°C</strong> Demonstrates the mattress cooling response.
             </p>
             <p class="text-[11px] text-slate-300 leading-relaxed">
-              <strong class="text-indigo-300">2. Intracranial Decompression (12° Angle):</strong> Elevating the upper mattress improves jugular venous outflow, decreases intracranial pressure (ICP), and eliminates obstructive airway collapse without causing sleep arousal.
+              <strong class="text-indigo-300">Head lift · 12°</strong> Demonstrates adjustable head positioning.
             </p>
           </div>
 
@@ -783,6 +790,93 @@
     </div>
 
     <!-- =====================================================================
+         TAB: INTERACTIVE BIOMETRIC 3D SCAN
+         ===================================================================== -->
+    <div id="tab-biometric-scan" class="tab-pane space-y-6">
+      <div class="glass-card p-5 sm:p-6 border border-white/10 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-teal-500/10 border border-teal-400/20 flex items-center justify-center text-xl">◉</div>
+          <div>
+          <h2 class="text-lg font-black text-white">Body scan</h2>
+          <p class="text-xs text-slate-400">Adjust the model · Live heart rate</p>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-2 rounded-full border border-teal-500/25 bg-teal-500/[0.06] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-300">
+          <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+          Live scan
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <section class="lg:col-span-8 glass-card p-4 sm:p-5 border border-white/10" aria-label="Interactive biometric body scan">
+          <div class="relative rounded-2xl bg-gradient-to-b from-deep-950 via-[#081229] to-deep-950 border border-teal-500/30 overflow-hidden">
+            <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between gap-2 pointer-events-none">
+              <div class="space-y-1.5">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-deep-950/85 border border-teal-500/40">
+                  <span class="w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping"></span>
+                  <span class="text-xs font-extrabold text-white" id="bioScanBmi">BMI 22.5</span>
+                  <span class="text-[11px] font-bold text-teal-300 border-l border-slate-700 pl-2" id="bioScanCategory">Optimal</span>
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-1.5 pointer-events-auto">
+                <div id="bioScanHeartBadge" class="px-3 py-1.5 rounded-lg bg-rose-950/85 border border-rose-500/40 flex items-center gap-2 text-xs font-bold text-rose-300">
+                  <span aria-hidden="true">♥</span><span id="bioScanHeartRate">68 BPM</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <button type="button" id="bioScanRotate" aria-pressed="true" class="px-2.5 py-1 rounded bg-deep-900/90 text-[10px] font-semibold text-teal-300 border border-teal-500/30 transition hover:bg-teal-950/80">360° Rotate</button>
+                  <button type="button" id="bioScanWireframe" aria-pressed="false" class="px-2.5 py-1 rounded bg-deep-900/90 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30 transition hover:bg-indigo-950/80">Wireframe</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="bioScanViewport" role="img" aria-label="Interactive 3D body model. Drag horizontally to rotate." class="w-full h-[320px] sm:h-[390px] cursor-grab active:cursor-grabbing touch-pan-y"></div>
+            <div id="bioScanFallback" class="hidden absolute inset-0 z-20 items-center justify-center bg-deep-950/90 p-6 text-center text-sm text-rose-200">3D scanner could not start. Check WebGL support and reload the page.</div>
+            <div class="px-3 py-2 bg-deep-950/90 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400">
+              <span>Drag to rotate · <span class="text-rose-300">♥</span> Live heart rate</span>
+              <span id="bioScanDimensions" class="font-bold text-slate-200">170 cm • 65.0 kg</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="lg:col-span-4 glass-card p-5 border border-white/10 space-y-5" aria-label="Biometric scan controls">
+          <div>
+            <h3 class="text-sm font-extrabold text-white">Profile</h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-deep-950/70 border border-white/10" role="group" aria-label="Avatar body composition">
+            <button type="button" id="bioScanStandard" aria-pressed="true" class="px-2.5 py-2 rounded-lg text-[11px] font-bold bg-teal-500 text-deep-950 transition">Standard</button>
+            <button type="button" id="bioScanAthletic" aria-pressed="false" class="px-2.5 py-2 rounded-lg text-[11px] font-bold text-slate-400 hover:text-white transition">Athletic</button>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-xl bg-deep-950/50 p-3 border border-white/[0.07]">
+              <div class="flex justify-between items-center mb-2">
+                <label for="bioScanHeightInput" class="text-xs text-slate-300 font-semibold">Height (cm)</label>
+                <input type="number" id="bioScanHeightInput" min="135" max="210" step="1" value="170" class="w-20 bg-deep-850 border border-white/10 rounded-lg px-2 py-1 text-sm font-bold text-teal-300 text-right" inputmode="numeric">
+              </div>
+              <input type="range" id="bioScanHeightSlider" min="135" max="210" step="1" value="170" aria-label="Height in centimeters" class="w-full h-1.5 cursor-pointer">
+            </div>
+            <div class="rounded-xl bg-deep-950/50 p-3 border border-white/[0.07]">
+              <div class="flex justify-between items-center mb-2">
+                <label for="bioScanWeightInput" class="text-xs text-slate-300 font-semibold">Weight (kg)</label>
+                <input type="number" id="bioScanWeightInput" min="35" max="180" step="0.5" value="65" class="w-20 bg-deep-850 border border-white/10 rounded-lg px-2 py-1 text-sm font-bold text-teal-300 text-right" inputmode="decimal">
+              </div>
+              <input type="range" id="bioScanWeightSlider" min="35" max="180" step="0.5" value="65" aria-label="Weight in kilograms" class="w-full h-1.5 cursor-pointer">
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-teal-500/20 bg-teal-500/[0.06] p-3">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-teal-300">Live heart rate</span>
+              <span id="bioScanSignalStatus" class="text-[10px] font-semibold text-emerald-300">Normal</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1.5">Demo display · Not a medical measurement</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- =====================================================================
          TAB 2: ANALYTICS TAB
          ===================================================================== -->
     <div id="tab-analytics" class="tab-pane space-y-6">
@@ -795,7 +889,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <h3 class="text-base font-extrabold text-white">Sleep Stage Architecture</h3>
-              <p class="text-xs text-slate-400">Polysomnography equivalent derived from mmWave radar micromovement</p>
+              <p class="text-xs text-slate-400">Sleep stages estimated from contact-free movement sensing.</p>
             </div>
             <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
               NREM/REM Balance: 94%
@@ -1222,7 +1316,7 @@
 
             <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
               <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
-              <span class="text-slate-300">SomniSync mmWave radar contactless shield armed</span>
+              <span class="text-slate-300">SomniSync contact-free sensor active</span>
             </label>
           </div>
         </div>
@@ -1246,7 +1340,7 @@
           <div>
             <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Consistency Streak</div>
             <div class="text-2xl font-black text-white mt-0.5">7 Nights</div>
-            <div class="text-[10px] text-teal-300 font-semibold mt-0.5">100% mmWave Telemetry</div>
+            <div class="text-[10px] text-teal-300 font-semibold mt-0.5">100% sensor telemetry</div>
           </div>
         </div>
 
@@ -1303,7 +1397,7 @@
       <div class="glass-card p-6 border border-white/10 overflow-hidden">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
           <h3 class="text-base font-extrabold text-white">Detailed Biometric Night Log</h3>
-          <span class="text-xs text-slate-400 font-mono">Contactless mmWave Records</span>
+          <span class="text-xs text-slate-400 font-mono">Contact-free sensor records</span>
         </div>
 
         <div class="overflow-x-auto">
@@ -1429,18 +1523,33 @@
         <span id="panelBpmVal" class="font-mono font-bold text-teal-300">68 BPM</span>
       </div>
 
+      <fieldset id="callModeControls" class="space-y-1.5" disabled>
+        <legend class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Emergency call mode</legend>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[11px] text-slate-300 has-[:checked]:border-amber-400/50 has-[:checked]:bg-amber-500/10 cursor-pointer">
+            <input id="callModeDryRun" type="radio" name="callMode" value="dry-run" checked onchange="SimBridge.setCallMode(this.value)" class="accent-amber-400">
+            <span>Dry-run</span>
+          </label>
+          <label id="callModeLiveLabel" class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[11px] text-slate-300 has-[:checked]:border-rose-400/50 has-[:checked]:bg-rose-500/10 cursor-pointer">
+            <input id="callModeLive" type="radio" name="callMode" value="live" disabled onchange="SimBridge.setCallMode(this.value)" class="accent-rose-400">
+            <span>Live call</span>
+          </label>
+        </div>
+        <p id="callModeHelp" class="text-[10px] leading-snug text-slate-500" role="status" aria-live="polite">Dry-run is selected. No phone call will be placed.</p>
+      </fieldset>
+
       <!-- 2 Big Action Buttons -->
       <div class="grid grid-cols-1 gap-2">
         <button type="button" onclick="StateMachine.setState('emergency')" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-xs transition shadow-lg shadow-rose-900/40 flex items-center justify-center gap-1.5">
-          <span>🚨 Trigger 03:00 AM Distress</span>
+          <span>🚨 Trigger alert</span>
         </button>
         <button type="button" onclick="StateMachine.setState('normal')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition border border-white/10 flex items-center justify-center gap-1.5">
-          <span>✅ Cancel / Normalize</span>
+          <span>✅ Return to normal</span>
         </button>
       </div>
 
       <!-- Countdown Bar in Panel (Hidden until emergency active) -->
-      <div id="panelCountdownBox" class="hidden p-2.5 rounded-xl bg-rose-950/80 border border-rose-500/50 space-y-1.5 animate-pulse">
+      <div id="panelCountdownBox" class="hidden p-2.5 rounded-xl bg-rose-950/80 border border-rose-500/50 space-y-2">
         <div class="flex justify-between text-[11px] text-rose-200 font-bold">
           <span>Emergency Countdown</span>
           <span id="panelCountdownSec" class="font-mono text-white font-black">15s</span>
@@ -1448,17 +1557,26 @@
         <div class="w-full h-1.5 bg-rose-900 rounded-full overflow-hidden">
           <div id="panelCountdownBar" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%"></div>
         </div>
-        <p class="text-[10px] text-rose-300 leading-tight">Click Cancel above to abort emergency call.</p>
+        <button type="button" id="panelEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="w-full min-h-11 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-black transition shadow-lg shadow-rose-950/40" aria-label="Cancel emergency call countdown">
+          Cancel emergency call
+        </button>
       </div>
+      <p id="panelCallStatus" class="hidden text-[10px] leading-tight text-slate-300" role="status" aria-live="polite"></p>
 
       <!-- Scenario Selector Quick Links -->
       <div class="pt-2 border-t border-white/10 grid grid-cols-2 gap-1.5">
         <button type="button" onclick="StateMachine.setState('autopilot')" class="py-1 px-2 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 text-center transition">
-          🤖 Step 3: Act
+          🤖 Step 3: Act (Key 3)
         </button>
         <button type="button" onclick="StateMachine.setState('morning')" class="py-1 px-2 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300 text-center transition">
-          🌅 Morning
+          🌅 Morning (Key 4)
         </button>
+      </div>
+
+      <!-- Presenter Hotkey Hints -->
+      <div class="pt-2 border-t border-white/5 text-[9px] font-mono text-slate-400 flex items-center justify-between">
+        <span>Keys: [1] [2] [3] [4]</span>
+        <span>[Space] Demo • [P] Hide</span>
       </div>
 
     </div>
@@ -1521,9 +1639,60 @@
     };
 
     /* =====================================================================
-       2. THREE.JS 3D AMBIENT GALAXY / STARFIELD
+       2. THREE.JS 3D AMBIENT SNOWFLAKE GALAXY
        ===================================================================== */
     const Ambient3D = {
+      createSnowflakeTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 96;
+        canvas.height = 96;
+        const ctx = canvas.getContext('2d');
+
+        ctx.strokeStyle = 'rgba(238, 253, 255, 0.92)';
+        ctx.lineWidth = 2.4;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+        ctx.shadowBlur = 7;
+
+        const cx = 48, cy = 48, r = 37;
+
+        // 6 crystal arms
+        for (let i = 0; i < 6; i++) {
+          const angle = (i * Math.PI) / 3;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+
+          // Main line
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + cos * r, cy + sin * r);
+          ctx.stroke();
+
+          // Sub-branches (V-shapes along each branch)
+          [0.42, 0.72].forEach(dist => {
+            const bx = cx + cos * r * dist;
+            const by = cy + sin * r * dist;
+            const bLen = 7;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(angle + Math.PI / 4) * bLen, by + Math.sin(angle + Math.PI / 4) * bLen);
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(angle - Math.PI / 4) * bLen, by + Math.sin(angle - Math.PI / 4) * bLen);
+            ctx.stroke();
+          });
+        }
+
+        // Center crystal core
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+      },
+
       init() {
         const container = document.getElementById('threeBackgroundContainer');
         if (!container || typeof THREE === 'undefined') return;
@@ -1537,45 +1706,73 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Generate gentle floating particle galaxy
-        const count = 750;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(count * 3);
-        const colors = new Float32Array(count * 3);
+        // Use two scales so the snow reads clearly while retaining fine, star-like detail.
+        const createSnowfall = (count, size, opacity, minSpeed, maxSpeed) => {
+          const geometry = new THREE.BufferGeometry();
+          const positions = new Float32Array(count * 3);
+          const colors = new Float32Array(count * 3);
+          const velocities = new Float32Array(count);
+          const sways = new Float32Array(count);
+          const color1 = new THREE.Color(0x00d4aa);
+          const color2 = new THREE.Color(0x38bdf8);
+          const color3 = new THREE.Color(0xe2e8f0);
 
-        const color1 = new THREE.Color(0x00d4aa);
-        const color2 = new THREE.Color(0x6366f1);
+          for (let i = 0; i < count; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 600;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
+            velocities[i] = minSpeed + Math.random() * (maxSpeed - minSpeed);
+            sways[i] = Math.random() * Math.PI * 2;
 
-        for (let i = 0; i < count; i++) {
-          positions[i * 3] = (Math.random() - 0.5) * 600;
-          positions[i * 3 + 1] = (Math.random() - 0.5) * 450;
-          positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
+            const mixed = Math.random() > 0.48
+              ? color1.clone().lerp(color2, Math.random())
+              : color2.clone().lerp(color3, Math.random());
+            colors[i * 3] = mixed.r;
+            colors[i * 3 + 1] = mixed.g;
+            colors[i * 3 + 2] = mixed.b;
+          }
 
-          const mixed = color1.clone().lerp(color2, Math.random());
-          colors[i * 3] = mixed.r;
-          colors[i * 3 + 1] = mixed.g;
-          colors[i * 3 + 2] = mixed.b;
-        }
+          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+          const material = new THREE.PointsMaterial({
+            size,
+            map: snowflakeTexture,
+            vertexColors: true,
+            transparent: true,
+            opacity,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          const points = new THREE.Points(geometry, material);
+          scene.add(points);
+          return { count, geometry, positions, velocities, sways, points };
+        };
 
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const snowflakeTexture = this.createSnowflakeTexture();
+        const snowLayers = [
+          createSnowfall(140, 12, 0.84, 0.08, 0.22),
+          createSnowfall(1000, 4.5, 0.8, 0.12, 0.3)
+        ];
 
-        const material = new THREE.PointsMaterial({
-          size: 2.2,
-          vertexColors: true,
-          transparent: true,
-          opacity: 0.7,
-          blending: THREE.AdditiveBlending
-        });
-
-        const points = new THREE.Points(geometry, material);
-        scene.add(points);
-
-        // Smooth rotation
+        let t = 0;
         function animate() {
           requestAnimationFrame(animate);
-          points.rotation.y += 0.0004;
-          points.rotation.x += 0.0002;
+          t += 0.006;
+
+          snowLayers.forEach(layer => {
+            for (let i = 0; i < layer.count; i++) {
+              const index = i * 3;
+              layer.positions[index + 1] -= layer.velocities[i];
+              layer.positions[index] += Math.sin(t + layer.sways[i]) * 0.08;
+
+              if (layer.positions[index + 1] < -250) {
+                layer.positions[index + 1] = 250;
+                layer.positions[index] = (Math.random() - 0.5) * 600;
+              }
+            }
+            layer.geometry.attributes.position.needsUpdate = true;
+            layer.points.rotation.y += 0.00015;
+          });
           renderer.render(scene, camera);
         }
         animate();
@@ -1593,6 +1790,7 @@
        ===================================================================== */
     const AudioEngine = {
       ctx: null,
+      emergencyAlarmNodes: new Set(),
       pinkNode: null,
       pinkGain: null,
       brownNode: null,
@@ -1621,6 +1819,8 @@
           [0, 0.22, 0.44].forEach(offset => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
+            this.emergencyAlarmNodes.add(osc);
+            osc.onended = () => this.emergencyAlarmNodes.delete(osc);
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(880, now + offset);
             osc.frequency.exponentialRampToValueAtTime(740, now + offset + 0.14);
@@ -1634,6 +1834,13 @@
         } catch (e) {
           console.warn('AudioContext pending user interaction:', e);
         }
+      },
+
+      stopEmergencyAlarm() {
+        this.emergencyAlarmNodes.forEach((osc) => {
+          try { osc.stop(); } catch (e) {}
+        });
+        this.emergencyAlarmNodes.clear();
       },
 
       playShortBeep(freq = 880, duration = 0.12) {
@@ -2161,19 +2368,44 @@
       hrInterval: null,
       autoDemoStep: 0,
       autoDemoTimer: null,
+      cancelPending: false,
 
       init() {
         this.startNormal();
       },
 
-      setState(state) {
+      setState(state, options = {}) {
+        const previousState = this.currentState;
+        if (previousState === 'emergency' && state === 'emergency') return;
+
+        if (
+          previousState === 'emergency' &&
+          state !== 'emergency' &&
+          !options.fromBridge &&
+          !options.escalationComplete &&
+          !options.cancelConfirmed
+        ) {
+          this.cancelEmergency(state);
+          return;
+        }
+
         this.clearAllTimers();
         this.currentState = state;
 
+        if (!options.fromBridge) {
+          if (state === 'emergency' && previousState !== 'emergency') {
+            SimBridge.startEmergency().catch((error) => {
+              Toast.show(`Emergency backend unavailable: ${error.message}`, 'error');
+            });
+          }
+        }
+
         if (state === 'normal') {
+          this.cancelPending = false;
+          this.setCancelPending(false);
           this.startNormal();
         } else if (state === 'emergency') {
-          this.startEmergency();
+          this.startEmergency(options.remainingSeconds);
         } else if (state === 'autopilot') {
           this.startAutoPilot();
         } else if (state === 'morning') {
@@ -2189,12 +2421,15 @@
 
         this.updateUI({
           hr: currentHr,
+          hrSub: 'Normal',
           temp: 24.0,
+          tempSub: 'Comfortable',
           angle: 0,
           snoring: 36,
+          snoreSub: 'Quiet breathing',
           bp: '118/76',
-          statusTitle: 'STEP 1 — SENSE: Contactless biometric monitoring active',
-          statusDesc: 'Zero wearables. 60 GHz mmWave radar & piezoceramic sensors continuously track cardiopulmonary metrics.',
+          statusTitle: 'Monitoring active',
+          statusDesc: 'Contact-free heart and breathing monitoring.',
           clockMode: 'live',
           bedStageClass: 'bed-stage-normal',
           chartMode: 'normal',
@@ -2206,14 +2441,14 @@
 
         // Fluctuates HR every 3 seconds: 65-75 bpm
         this.hrInterval = setInterval(() => {
-          if (this.currentState !== 'normal') return;
+          if (this.currentState !== 'normal' || SimBridge.connected) return;
           currentHr = 65 + Math.floor(Math.random() * 11);
           document.getElementById('bedLiveHr').textContent = `${currentHr} bpm`;
           FloatingPanel.updateStatus('normal', currentHr);
         }, 3000);
       },
 
-      startEmergency() {
+      startEmergency(remainingSeconds = 15) {
         this.currentState = 'emergency';
         this.clearAllTimers();
 
@@ -2224,14 +2459,15 @@
 
         this.updateUI({
           hr: currentHr,
+          hrSub: 'Elevated',
           temp: 31.0,
-          tempSub: 'Thermal Surge (Rising)',
+          tempSub: 'Temperature rising',
           angle: 0,
           snoring: 63,
-          snoreSub: 'Severe Airway Obstruction',
-          bp: '160/100 (Rising)',
-          statusTitle: '⚠️ CRITICAL — 03:00 AM NOCTURNAL DISTRESS DETECTED',
-          statusDesc: 'Tachycardia spike & blood pressure surge indicate acute ischemic distress. Intervention initiated.',
+          snoreSub: 'Breathing alert',
+          bp: '160/100 · Rising',
+          statusTitle: 'High heart rate detected',
+          statusDesc: 'Emergency call starts in 15 seconds unless canceled.',
           clockMode: '03:00 AM',
           bedStageClass: 'bed-stage-emergency',
           chartMode: 'emergency',
@@ -2245,19 +2481,28 @@
         AudioEngine.playAlarmBeep();
 
         // 2. Show toast
-        Toast.show('🚨 CRITICAL: HR 142 bpm, Stroke Risk HIGH!', 'error');
+        Toast.show('🚨 Demo alert: elevated heart rate detected.', 'error');
 
         // 3. HR randomly fluctuates 130–145 bpm in emergency
         this.hrInterval = setInterval(() => {
-          if (this.currentState !== 'emergency') return;
+          if (this.currentState !== 'emergency' || SimBridge.connected) return;
           currentHr = 130 + Math.floor(Math.random() * 16);
           document.getElementById('bedLiveHr').textContent = `${currentHr} bpm`;
           FloatingPanel.updateStatus('emergency', currentHr);
         }, 1500);
 
-        // 4. 15-second countdown timer
-        let remaining = 15;
+        this.startCountdown(remainingSeconds);
+      },
+
+      startCountdown(remainingSeconds = 15) {
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+        let remaining = Math.min(15, Math.max(0, Math.ceil(remainingSeconds)));
         this.updateCountdownDisplays(remaining);
+
+        if (remaining === 0) {
+          SimBridge.showCallStatus('placing', 'Countdown complete · waiting for device');
+          return;
+        }
 
         this.countdownInterval = setInterval(() => {
           remaining--;
@@ -2269,8 +2514,7 @@
           } else {
             clearInterval(this.countdownInterval);
             this.countdownInterval = null;
-            // After 15s if not cancelled: trigger auto-pilot automatically!
-            this.setState('autopilot');
+            SimBridge.showCallStatus('placing', 'Countdown complete · waiting for device');
           }
         }, 1000);
       },
@@ -2284,13 +2528,14 @@
         // Initial setup for Auto-Pilot
         this.updateUI({
           hr: 128,
+          hrSub: 'Stabilizing',
           temp: 31.0,
           angle: 12,
           snoring: 38,
-          snoreSub: 'Airway Re-Opened (&lt;40 dB)',
-          bp: '116/75 (Stabilized)',
-          statusTitle: '✅ AUTO-PILOT ACTIVE — Mattress cooled to 19°C, Head elevated 12°',
-          statusDesc: 'Neuroprotection protocol active: CMRO₂ reduced by 22%, intracranial venous drainage restored.',
+          snoreSub: 'Breathing stable',
+          bp: '116/75 · Stable',
+          statusTitle: 'Auto-pilot active',
+          statusDesc: 'Cooling 19°C · Head lift 12° · Heart rate stabilizing.',
           clockMode: '03:05 AM',
           bedStageClass: 'bed-stage-autopilot',
           chartMode: 'autopilot',
@@ -2323,8 +2568,8 @@
 
           if (currentStep >= steps) {
             clearInterval(animTimer);
-            document.getElementById('bedLiveTempSub').textContent = '19.0°C Neuroprotection Active';
-            document.getElementById('bedLiveHrSub').textContent = 'Stabilized Sinus (58 bpm)';
+            document.getElementById('bedLiveTempSub').textContent = 'Cooling target reached';
+            document.getElementById('bedLiveHrSub').textContent = 'Heart rate stable';
           }
         }, 100);
 
@@ -2337,12 +2582,15 @@
 
         this.updateUI({
           hr: 58,
+          hrSub: 'Stable',
           temp: 19.0,
+          tempSub: 'Cooling target reached',
           angle: 12,
           snoring: 36,
+          snoreSub: 'Quiet breathing',
           bp: '116/75',
-          statusTitle: '🌅 Sleep Score 92/100 — Heart Safe — Deep Sleep Optimal',
-          statusDesc: 'Nocturnal ischemic distress successfully intercepted at 03:00 AM. 0 myocardial injury detected.',
+          statusTitle: 'Morning report · Score 92/100',
+          statusDesc: 'Alert response completed · System returned to safe state.',
           clockMode: '06:30 AM',
           bedStageClass: 'bed-stage-morning',
           chartMode: 'normal',
@@ -2356,25 +2604,37 @@
         const phoneModal = document.getElementById('morningPhoneModal');
         if (phoneModal) phoneModal.classList.remove('hidden');
 
-        // Confetti Fireworks via canvas-confetti
+        // Confetti Fireworks with Snowflake shapes via canvas-confetti
         if (typeof confetti === 'function') {
+          const snowShape = (typeof confetti.shapeFromText === 'function')
+            ? confetti.shapeFromText({ text: '❄️', scalar: 2.2 })
+            : 'circle';
           confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
+            shapes: [snowShape],
+            scalar: 2.2,
+            particleCount: 85,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#00d4aa', '#38bdf8', '#a5f3fc', '#ffffff', '#818cf8']
           });
           setTimeout(() => {
             confetti({
-              particleCount: 70,
+              shapes: [snowShape],
+              scalar: 2.0,
+              particleCount: 65,
               angle: 60,
               spread: 55,
-              origin: { x: 0 }
+              origin: { x: 0 },
+              colors: ['#00d4aa', '#38bdf8', '#ffffff']
             });
             confetti({
-              particleCount: 70,
+              shapes: [snowShape],
+              scalar: 2.0,
+              particleCount: 65,
               angle: 120,
               spread: 55,
-              origin: { x: 1 }
+              origin: { x: 1 },
+              colors: ['#00d4aa', '#38bdf8', '#ffffff']
             });
           }, 350);
         }
@@ -2382,10 +2642,44 @@
         Toast.show('✨ Excellent night! 92/100 Heart Safe', 'success');
       },
 
-      cancelEmergency() {
-        this.clearAllTimers();
-        Toast.show('Emergency countdown aborted by user.', 'warning');
-        this.setState('normal');
+      cancelEmergency(nextState = 'normal') {
+        if (this.currentState !== 'emergency') return;
+
+        if (!this.cancelPending) {
+          AudioEngine.stopEmergencyAlarm();
+          this.setState(nextState, { fromBridge: true });
+        }
+
+        this.cancelPending = true;
+        this.setCancelPending(true);
+        SimBridge.cancelEmergency().then((result) => {
+          this.cancelPending = false;
+          this.setCancelPending(false);
+          if (result.cancelled) {
+            SimBridge.showCallStatus('cancelled', 'Emergency call cancelled');
+          } else if (result.state === 'AUTOPILOT') {
+            Toast.show('The emergency call has already started and cannot be canceled.', 'warning');
+            this.setState('autopilot', { fromBridge: true });
+          } else if (result.state !== 'NORMAL') {
+            Toast.show('The local alarm stopped, but the backend did not confirm cancellation.', 'warning');
+          }
+        }).catch((error) => {
+          this.cancelPending = false;
+          this.setCancelPending(false);
+          SimBridge.showCallStatus('error', 'Dashboard alarm stopped · backend cancellation unconfirmed');
+          Toast.show(`Dashboard alarm stopped, but the backend could not confirm call cancellation: ${error.message}`, 'warning');
+        });
+      },
+
+      setCancelPending(pending) {
+        ['topEmergencyCancelBtn', 'panelEmergencyCancelBtn'].forEach((id) => {
+          const button = document.getElementById(id);
+          if (!button) return;
+          button.disabled = pending;
+          button.textContent = pending ? 'Cancelling…' : id === 'topEmergencyCancelBtn' ? 'Abort / Cancel' : 'Cancel emergency call';
+          button.classList.toggle('opacity-60', pending);
+          button.classList.toggle('cursor-wait', pending);
+        });
       },
 
       startAutoDemo() {
@@ -2427,6 +2721,7 @@
       updateUI(params) {
         // Telemetry cards
         if (params.hr !== undefined) document.getElementById('bedLiveHr').textContent = `${params.hr} bpm`;
+        if (params.hrSub) document.getElementById('bedLiveHrSub').textContent = params.hrSub;
         if (params.temp !== undefined) {
           document.getElementById('bedLiveTemp').textContent = `${params.temp.toFixed(1)} °C`;
           document.getElementById('tempSlider').value = params.temp;
@@ -2773,7 +3068,356 @@
     };
 
     /* =====================================================================
-       11. NAVIGATION & CLOCK MANAGER
+       11. INTERACTIVE BIOMETRIC 3D SCANNER
+       ===================================================================== */
+    const BioScanner = {
+      initialized: false,
+      autoRotate: true,
+      wireframe: false,
+      composition: 'standard',
+      target: { heightCm: 170, weightKg: 65, heartRate: 68, elevated: false },
+      curr: { h: 1, cx: 1, cz: 1, wx: 1, bz: 1, bo: 0, hx: 1, limb: 1 },
+      parts: {},
+      materials: {},
+      resizeObserver: null,
+      vitalsObserver: null,
+
+      init() {
+        const box = document.getElementById('bioScanViewport');
+        if (this.initialized || !box) return;
+        if (typeof THREE === 'undefined') {
+          this.showError(new Error('Three.js failed to load.'));
+          return;
+        }
+
+        const width = box.clientWidth || 360;
+        const height = box.clientHeight || 320;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
+        camera.position.set(0, 1.28, 4.55);
+        camera.lookAt(0, 1.08, 0);
+
+        let renderer;
+        try {
+          renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        } catch (error) {
+          this.showError(error);
+          return;
+        }
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.setClearColor(0x000000, 0);
+        box.replaceChildren(renderer.domElement);
+        renderer.domElement.setAttribute('aria-hidden', 'true');
+
+        scene.add(new THREE.HemisphereLight(0xcaf7ef, 0x101833, 1.15));
+        const keyLight = new THREE.DirectionalLight(0x8fffea, 1.65);
+        keyLight.position.set(2.8, 4.5, 3.5);
+        scene.add(keyLight);
+        const rimLight = new THREE.DirectionalLight(0x818cf8, 1.25);
+        rimLight.position.set(-3.5, 2.8, -2.5);
+        scene.add(rimLight);
+
+        const glowRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.9, 0.96, 72),
+          new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide, transparent: true, opacity: 0.58 })
+        );
+        glowRing.rotation.x = -Math.PI / 2;
+        glowRing.position.y = 0.025;
+        scene.add(glowRing);
+        const innerRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.69, 0.705, 64),
+          new THREE.MeshBasicMaterial({ color: 0x6366f1, side: THREE.DoubleSide, transparent: true, opacity: 0.32 })
+        );
+        innerRing.rotation.x = -Math.PI / 2;
+        innerRing.position.y = 0.028;
+        scene.add(innerRing);
+        const laser = new THREE.Mesh(
+          new THREE.TorusGeometry(0.74, 0.009, 8, 64),
+          new THREE.MeshBasicMaterial({ color: 0x67f7df, transparent: true, opacity: 0.72 })
+        );
+        laser.rotation.x = Math.PI / 2;
+        scene.add(laser);
+
+        const bodyMat = new THREE.MeshPhongMaterial({
+          color: 0x14b8a6, emissive: 0x0f766e, emissiveIntensity: 0.22,
+          shininess: 82, specular: 0x9ffff0, transparent: true, opacity: 0.78
+        });
+        const detailMat = new THREE.MeshPhongMaterial({
+          color: 0x5eead4, emissive: 0x0f766e, emissiveIntensity: 0.3,
+          shininess: 70, transparent: true, opacity: 0.78
+        });
+        const heartMat = new THREE.MeshBasicMaterial({ color: 0xfb7185 });
+        const root = new THREE.Group();
+        scene.add(root);
+
+        const unitSphere = new THREE.SphereGeometry(1, 32, 24);
+        const addShape = (x, y, z, sx, sy, sz, material = bodyMat, geometry = unitSphere) => {
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, y, z);
+          mesh.scale.set(sx, sy, sz);
+          root.add(mesh);
+          return mesh;
+        };
+        const lCalf = addShape(-0.15, 0.29, 0, 0.081, 0.255, 0.09);
+        const rCalf = addShape(0.15, 0.29, 0, 0.081, 0.255, 0.09);
+        const lThigh = addShape(-0.145, 0.72, 0, 0.116, 0.33, 0.125);
+        const rThigh = addShape(0.145, 0.72, 0, 0.116, 0.33, 0.125);
+        addShape(-0.15, 0.445, 0.005, 0.084, 0.09, 0.094, detailMat);
+        addShape(0.15, 0.445, 0.005, 0.084, 0.09, 0.094, detailMat);
+        addShape(-0.15, 0.075, 0.075, 0.108, 0.065, 0.18);
+        addShape(0.15, 0.075, 0.075, 0.108, 0.065, 0.18);
+
+        const pelvis = addShape(0, 0.99, 0, 0.235, 0.18, 0.155);
+        const torsoGeometry = new THREE.LatheGeometry([
+          new THREE.Vector2(0, 0.99), new THREE.Vector2(0.16, 0.99),
+          new THREE.Vector2(0.225, 1.04), new THREE.Vector2(0.235, 1.12),
+          new THREE.Vector2(0.205, 1.24), new THREE.Vector2(0.19, 1.36),
+          new THREE.Vector2(0.235, 1.49), new THREE.Vector2(0.285, 1.59),
+          new THREE.Vector2(0.29, 1.65), new THREE.Vector2(0.245, 1.69),
+          new THREE.Vector2(0.15, 1.72), new THREE.Vector2(0.105, 1.72),
+          new THREE.Vector2(0, 1.72)
+        ], 48);
+        torsoGeometry.computeVertexNormals();
+        const torso = addShape(0, 0, 0, 1, 1, 1, bodyMat, torsoGeometry);
+        const lShoulder = addShape(-0.265, 1.59, 0, 0.125, 0.125, 0.12);
+        const rShoulder = addShape(0.265, 1.59, 0, 0.125, 0.125, 0.12);
+        const lArm = addShape(-0.325, 1.34, 0.005, 0.086, 0.255, 0.09);
+        const rArm = addShape(0.325, 1.34, 0.005, 0.086, 0.255, 0.09);
+        lArm.rotation.z = 0.13;
+        rArm.rotation.z = -0.13;
+        const lForearm = addShape(-0.36, 1.035, 0.015, 0.072, 0.22, 0.078);
+        const rForearm = addShape(0.36, 1.035, 0.015, 0.072, 0.22, 0.078);
+        const lHand = addShape(-0.39, 0.79, 0.035, 0.07, 0.11, 0.075, detailMat);
+        const rHand = addShape(0.39, 0.79, 0.035, 0.07, 0.11, 0.075, detailMat);
+        addShape(0, 1.765, 0, 0.09, 0.105, 0.09);
+        addShape(0, 1.965, 0.005, 0.144, 0.184, 0.13);
+        const heart = addShape(0.055, 1.49, 0.221, 0.054, 0.058, 0.04, heartMat);
+
+        this.parts = { root, torso, pelvis, lCalf, rCalf, lThigh, rThigh, heart, lShoulder, rShoulder, lArm, rArm, lForearm, rForearm, lHand, rHand, laser, glowRing, innerRing };
+        this.materials = { bodyMat, detailMat, heartMat };
+        this.scene = scene;
+        this.camera = camera;
+        this.renderer = renderer;
+        this.initialized = true;
+
+        let dragging = false;
+        let previousX = 0;
+        box.addEventListener('pointerdown', event => {
+          if (event.button !== undefined && event.button !== 0) return;
+          dragging = true;
+          previousX = event.clientX;
+          box.classList.add('cursor-grabbing');
+          if (box.setPointerCapture && event.pointerId !== undefined) box.setPointerCapture(event.pointerId);
+        });
+        box.addEventListener('pointermove', event => {
+          if (!dragging) return;
+          root.rotation.y += (event.clientX - previousX) * 0.012;
+          previousX = event.clientX;
+        });
+        const stopDragging = () => {
+          dragging = false;
+          box.classList.remove('cursor-grabbing');
+        };
+        box.addEventListener('pointerup', stopDragging);
+        box.addEventListener('pointercancel', stopDragging);
+        box.addEventListener('lostpointercapture', stopDragging);
+
+        if (typeof ResizeObserver !== 'undefined') {
+          this.resizeObserver = new ResizeObserver(() => this.resize());
+          this.resizeObserver.observe(box);
+        }
+
+        const clock = new THREE.Clock();
+        const animate = () => {
+          requestAnimationFrame(animate);
+          const time = clock.getElapsedTime();
+          const current = this.curr;
+          const target = this.target;
+          const part = this.parts;
+          const heightScale = target.heightCm / 170;
+          current.h += (heightScale - current.h) * 0.12;
+          part.root.scale.y = current.h;
+
+          const bmi = target.weightKg / Math.pow(target.heightCm / 100, 2);
+          const delta = Math.max(-0.4, Math.min(1.4, (bmi - 21.5) / 14));
+          const athletic = this.composition === 'athletic';
+          current.cx += ((athletic ? 1.06 + Math.max(0, delta * 0.6) : 1 + delta * 0.45) - current.cx) * 0.12;
+          current.cz += ((athletic ? 1.04 + Math.max(0, delta * 0.4) : 1 + delta * 0.52) - current.cz) * 0.12;
+          current.wx += ((athletic ? 0.92 + Math.max(-0.15, delta * 0.22) : 1 + delta * 0.85) - current.wx) * 0.12;
+          current.bz += ((athletic ? 0.88 + Math.max(-0.12, delta * 0.2) : 1 + Math.max(-0.25, delta * 1.25)) - current.bz) * 0.12;
+          current.bo += ((athletic ? 0.01 : Math.max(-0.02, delta * 0.11)) - current.bo) * 0.12;
+          current.hx += ((athletic ? 0.98 + delta * 0.3 : 1 + delta * 0.65) - current.hx) * 0.12;
+          current.limb += ((athletic ? 1.05 + delta * 0.45 : 1 + delta * 0.55) - current.limb) * 0.12;
+
+          part.torso.scale.set(current.cx * current.wx, 1, current.cz * current.bz);
+          part.torso.position.z = current.bo * 0.3;
+          part.pelvis.scale.set(0.235 * current.hx * current.wx, 0.18, 0.155 * current.hx * current.bz * 0.95);
+          const shoulderSpan = 0.34 * Math.max(0.92, current.cx * 0.95);
+          part.lShoulder.position.x = -shoulderSpan * 0.78;
+          part.rShoulder.position.x = shoulderSpan * 0.78;
+          part.lArm.position.x = -shoulderSpan * 0.96;
+          part.rArm.position.x = shoulderSpan * 0.96;
+          part.lArm.scale.set(0.086 * current.limb * 0.88, 0.255, 0.09 * current.limb * 0.88);
+          part.rArm.scale.copy(part.lArm.scale);
+          part.lForearm.scale.set(0.072 * current.limb * 0.9, 0.22, 0.078 * current.limb * 0.9);
+          part.rForearm.scale.copy(part.lForearm.scale);
+          part.lHand.scale.set(0.07 * current.limb, 0.11, 0.075 * current.limb);
+          part.rHand.scale.copy(part.lHand.scale);
+          part.lThigh.scale.set(0.116 * current.limb, 0.33, 0.125 * current.limb);
+          part.rThigh.scale.copy(part.lThigh.scale);
+          part.lCalf.scale.set(0.081 * current.limb * 0.9, 0.255, 0.09 * current.limb * 0.9);
+          part.rCalf.scale.copy(part.lCalf.scale);
+
+          const pulse = 1 + 0.28 * Math.pow(Math.max(0, Math.sin(time * Math.PI * 2 * target.heartRate / 60)), 4);
+          part.heart.position.z = 0.221 * current.cz + current.bo * 0.3;
+          part.heart.scale.set(0.054 * pulse, 0.058 * pulse, 0.04 * pulse);
+          part.laser.position.y = (Math.sin(time * 1.4) * 0.5 + 0.5) * 2.04 * current.h;
+          part.glowRing.material.opacity = 0.48 + Math.sin(time * 1.5) * 0.1;
+          part.innerRing.rotation.z = time * 0.12;
+          if (this.autoRotate && !dragging) part.root.rotation.y += 0.0065;
+          renderer.render(scene, camera);
+        };
+        this.syncVitals();
+        this.syncFromInputs();
+        animate();
+        this.resize();
+      },
+
+      showError(error) {
+        console.error('Biometric 3D scanner initialization failed:', error);
+        const fallback = document.getElementById('bioScanFallback');
+        if (fallback) {
+          fallback.classList.remove('hidden');
+          fallback.classList.add('flex');
+        }
+      },
+
+      resize() {
+        const box = document.getElementById('bioScanViewport');
+        if (!this.initialized || !box || !this.camera || !this.renderer) return;
+        const width = box.clientWidth;
+        const height = box.clientHeight;
+        if (!width || !height) return;
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height, false);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      },
+
+      syncVitals() {
+        const liveHr = document.getElementById('bedLiveHr');
+        const heartRate = liveHr ? parseInt(liveHr.textContent, 10) : 68;
+        this.target.heartRate = Number.isFinite(heartRate) ? heartRate : 68;
+        this.target.elevated = this.target.heartRate >= 100;
+        const heartText = document.getElementById('bioScanHeartRate');
+        const heartBadge = document.getElementById('bioScanHeartBadge');
+        const signal = document.getElementById('bioScanSignalStatus');
+        if (heartText) heartText.textContent = `${this.target.heartRate} BPM`;
+        if (heartBadge) {
+          heartBadge.classList.toggle('bg-rose-950/85', this.target.elevated);
+          heartBadge.classList.toggle('border-rose-500/40', this.target.elevated);
+          heartBadge.classList.toggle('text-rose-300', this.target.elevated);
+          heartBadge.classList.toggle('bg-emerald-950/85', !this.target.elevated);
+          heartBadge.classList.toggle('border-emerald-500/40', !this.target.elevated);
+          heartBadge.classList.toggle('text-emerald-300', !this.target.elevated);
+        }
+        if (signal) {
+          signal.textContent = this.target.elevated ? 'Elevated' : 'Normal';
+          signal.classList.toggle('text-rose-300', this.target.elevated);
+          signal.classList.toggle('text-emerald-300', !this.target.elevated);
+        }
+      },
+
+      syncFromInputs() {
+        const heightInput = document.getElementById('bioScanHeightInput');
+        const weightInput = document.getElementById('bioScanWeightInput');
+        if (!heightInput || !weightInput) return;
+        const heightCm = Number(heightInput.value);
+        const weightKg = Number(weightInput.value);
+        if (!Number.isFinite(heightCm) || heightCm < 135 || heightCm > 210 ||
+            !Number.isFinite(weightKg) || weightKg < 35 || weightKg > 180) return;
+
+        this.target.heightCm = heightCm;
+        this.target.weightKg = weightKg;
+        const bmi = +(weightKg / Math.pow(heightCm / 100, 2)).toFixed(1);
+        const category = bmi < 18.5 ? 'Below range'
+          : bmi >= 25 ? 'Above range' : 'Reference range';
+        const bmiLabel = document.getElementById('bioScanBmi');
+        const categoryLabel = document.getElementById('bioScanCategory');
+        const dimensions = document.getElementById('bioScanDimensions');
+        if (bmiLabel) bmiLabel.textContent = `BMI ${bmi}`;
+        if (categoryLabel) categoryLabel.textContent = category;
+        if (dimensions) dimensions.textContent = `${heightCm} cm • ${weightKg.toFixed(1)} kg`;
+        if (this.materials.bodyMat) {
+          const color = bmi < 18.5 ? 0x38bdf8 : bmi > 25 ? 0xf59e0b : 0x14b8a6;
+          const emissive = bmi < 18.5 ? 0x0369a1 : bmi > 25 ? 0xb45309 : 0x0f766e;
+          this.materials.bodyMat.color.setHex(color);
+          this.materials.bodyMat.emissive.setHex(emissive);
+        }
+      },
+
+      initControls() {
+        const bindPair = (numberId, sliderId) => {
+          const number = document.getElementById(numberId);
+          const slider = document.getElementById(sliderId);
+          if (!number || !slider) return;
+          number.addEventListener('input', () => {
+            const value = Number(number.value);
+            if (Number.isFinite(value) && value >= Number(slider.min) && value <= Number(slider.max)) slider.value = String(value);
+            this.syncFromInputs();
+          });
+          slider.addEventListener('input', () => {
+            number.value = slider.value;
+            this.syncFromInputs();
+          });
+          number.addEventListener('change', () => {
+            const value = Number(number.value);
+            if (!Number.isFinite(value)) return;
+            number.value = String(Math.max(Number(slider.min), Math.min(Number(slider.max), value)));
+            slider.value = number.value;
+            this.syncFromInputs();
+          });
+        };
+        bindPair('bioScanHeightInput', 'bioScanHeightSlider');
+        bindPair('bioScanWeightInput', 'bioScanWeightSlider');
+
+        document.getElementById('bioScanRotate')?.addEventListener('click', event => {
+          this.autoRotate = !this.autoRotate;
+          event.currentTarget.setAttribute('aria-pressed', String(this.autoRotate));
+        });
+        document.getElementById('bioScanWireframe')?.addEventListener('click', event => {
+          this.wireframe = !this.wireframe;
+          if (this.materials.bodyMat) this.materials.bodyMat.wireframe = this.wireframe;
+          if (this.materials.detailMat) this.materials.detailMat.wireframe = this.wireframe;
+          event.currentTarget.setAttribute('aria-pressed', String(this.wireframe));
+        });
+        const setComposition = composition => {
+          this.composition = composition;
+          const standard = document.getElementById('bioScanStandard');
+          const athletic = document.getElementById('bioScanAthletic');
+          standard.setAttribute('aria-pressed', String(composition === 'standard'));
+          athletic.setAttribute('aria-pressed', String(composition === 'athletic'));
+          standard.className = `px-2.5 py-2 rounded-lg text-[11px] font-bold transition ${composition === 'standard' ? 'bg-teal-500 text-deep-950' : 'text-slate-400 hover:text-white'}`;
+          athletic.className = `px-2.5 py-2 rounded-lg text-[11px] font-bold transition ${composition === 'athletic' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'}`;
+          this.syncFromInputs();
+        };
+        document.getElementById('bioScanStandard')?.addEventListener('click', () => setComposition('standard'));
+        document.getElementById('bioScanAthletic')?.addEventListener('click', () => setComposition('athletic'));
+
+        const liveHr = document.getElementById('bedLiveHr');
+        if (liveHr && typeof MutationObserver !== 'undefined') {
+          this.vitalsObserver = new MutationObserver(() => this.syncVitals());
+          this.vitalsObserver.observe(liveHr, { childList: true, characterData: true, subtree: true });
+        }
+        this.syncVitals();
+        this.syncFromInputs();
+      }
+    };
+
+    /* =====================================================================
+       12. NAVIGATION & CLOCK MANAGER
        ===================================================================== */
     const App = {
       switchTab(tabId) {
@@ -2785,6 +3429,12 @@
 
         if (targetPane) targetPane.classList.add('active');
         if (targetBtn) targetBtn.classList.add('active');
+
+        if (tabId === 'biometric-scan') {
+          BioScanner.init();
+          setTimeout(() => BioScanner.resize(), 150);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         // Resize charts when tab becomes visible
         setTimeout(() => {
@@ -2810,19 +3460,228 @@
             bannerClock.textContent = bannerTimeStr;
           }
         }, 1000);
+      },
+
+      initKeyboardShortcuts() {
+        window.addEventListener('keydown', (e) => {
+          if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+          if (e.key === '1') {
+            StateMachine.setState('normal');
+          } else if (e.key === '2') {
+            StateMachine.setState('emergency');
+          } else if (e.key === '3') {
+            StateMachine.setState('autopilot');
+          } else if (e.key === '4') {
+            StateMachine.setState('morning');
+          } else if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+            StateMachine.startAutoDemo();
+          } else if (e.key === 'p' || e.key === 'P' || e.key === '`') {
+            FloatingPanel.isOpen ? FloatingPanel.close() : FloatingPanel.open();
+          }
+        });
       }
     };
 
     /* =====================================================================
-       12. INITIALIZATION
+       13. OPTIONAL IOT SIMULATOR BRIDGE (Connects to somnisync_sim.js if active)
+       ===================================================================== */
+    const SimBridge = {
+      connected: false,
+      enabled: false,
+      base: '',
+      stateRequest: Promise.resolve(),
+
+      post(path, payload) {
+        if (!this.enabled) return Promise.reject(new Error('Open the dashboard from the local SomniSync server first.'));
+        const request = this.stateRequest.then(async () => {
+          const response = await fetch(`${this.base}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload === undefined ? undefined : JSON.stringify(payload)
+          });
+          let result = {};
+          try {
+            result = await response.json();
+          } catch (e) {
+            // A non-JSON backend response is reported by the HTTP status below.
+          }
+          if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+          return result;
+        });
+        this.stateRequest = request.catch(() => {});
+        return request;
+      },
+
+      startEmergency() {
+        this.renderCallMode();
+        return this.post('/api/emergency/start');
+      },
+
+      cancelEmergency() {
+        this.renderCallMode();
+        return this.post('/api/emergency/cancel');
+      },
+
+      callMode: 'dry-run',
+      liveAvailable: false,
+      callModeLocked: false,
+
+      renderCallMode(mode = this.callMode, liveAvailable = this.liveAvailable, reason = '', locked = this.callModeLocked) {
+        this.callMode = mode;
+        this.liveAvailable = liveAvailable;
+        this.callModeLocked = locked;
+        const dryRunInput = document.getElementById('callModeDryRun');
+        const liveInput = document.getElementById('callModeLive');
+        const controls = document.getElementById('callModeControls');
+        const help = document.getElementById('callModeHelp');
+        if (!dryRunInput || !liveInput || !controls || !help) return;
+
+        dryRunInput.checked = mode === 'dry-run';
+        liveInput.checked = mode === 'live';
+        const isLocked = locked || StateMachine.currentState === 'emergency';
+        liveInput.disabled = !liveAvailable || isLocked;
+        dryRunInput.disabled = isLocked;
+        controls.disabled = !this.connected || isLocked;
+        if (mode === 'live') {
+          help.textContent = StateMachine.currentState === 'autopilot'
+            ? 'LIVE CALLS: applies to the next alert. Switch to Dry-run here any time before the next alert.'
+            : 'LIVE CALLS: after 15 seconds, Twilio will call the verified recipient using its standard trial voice prompt.';
+          help.className = 'text-[10px] leading-snug text-rose-300';
+        } else if (!liveAvailable) {
+          help.textContent = `Dry-run selected. Live calls unavailable: ${reason || 'Twilio credentials are not configured on the server.'}`;
+          help.className = 'text-[10px] leading-snug text-amber-300';
+        } else {
+          help.textContent = 'Dry-run is selected. No phone call will be placed.';
+          help.className = 'text-[10px] leading-snug text-slate-400';
+        }
+      },
+
+      async setCallMode(mode) {
+        try {
+          const result = await this.post('/api/call-mode', { mode });
+          this.renderCallMode(result.mode, result.liveAvailable, '', result.locked);
+        } catch (error) {
+          this.renderCallMode();
+          this.showCallStatus('error', `Could not change call mode: ${error.message}`);
+        }
+      },
+
+      showCallStatus(status, message) {
+        const element = document.getElementById('panelCallStatus');
+        if (!element) return;
+        element.textContent = message;
+        element.className = 'text-[10px] leading-tight';
+        if (status === 'accepted') {
+          element.classList.add('text-emerald-300');
+          Toast.show(message, 'success');
+        } else if (status === 'error') {
+          element.classList.add('text-rose-300');
+          Toast.show(message, 'error');
+        } else if (status === 'dry-run') {
+          element.classList.add('text-amber-300');
+          Toast.show(message, 'warning');
+        } else if (status === 'cancelled') {
+          element.classList.add('text-slate-400');
+        } else {
+          element.classList.add('text-teal-300');
+        }
+      },
+
+      resetCallStatus() {
+        const element = document.getElementById('panelCallStatus');
+        if (!element) return;
+        element.textContent = '';
+        element.className = 'hidden text-[10px] leading-tight';
+      },
+
+      init() {
+        const isLocalDashboard = window.location.protocol === 'http:' &&
+          ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        this.enabled = isLocalDashboard;
+        this.base = '';
+        if (!isLocalDashboard) {
+          const statusLabel = document.getElementById('panelStatusLabel');
+          if (statusLabel) statusLabel.textContent = 'Open local dashboard to connect';
+          return;
+        }
+        let es;
+        try {
+          es = new EventSource('/events');
+        } catch (e) {
+          return;
+        }
+
+        es.onopen = () => {
+          this.connected = true;
+          const statusDot = document.getElementById('panelStatusDot');
+          const statusLabel = document.getElementById('panelStatusLabel');
+          if (statusDot) statusDot.className = 'w-2 h-2 rounded-full bg-teal-400 animate-pulse';
+          if (statusLabel) statusLabel.textContent = 'IoT Mattress Connected';
+          this.renderCallMode();
+          Toast.show('🔌 Connected to SomniSync IoT Device Simulator', 'success');
+        };
+
+        es.onmessage = (m) => {
+          let d;
+          try { d = JSON.parse(m.data); } catch (e) { return; }
+          if (d.event === 'emergency') {
+            this.resetCallStatus();
+            if (StateMachine.currentState !== 'emergency') {
+              StateMachine.setState('emergency', {
+                fromBridge: true,
+                remainingSeconds: d.remainingSeconds
+              });
+            } else if (Number.isFinite(d.remainingSeconds)) {
+              StateMachine.startCountdown(d.remainingSeconds);
+            }
+            this.renderCallMode();
+          } else if (d.event === 'normal' && StateMachine.currentState !== 'normal') {
+            StateMachine.setState('normal', { fromBridge: true });
+            this.renderCallMode();
+          } else if (d.event === 'emergency-cancelled') {
+            if (StateMachine.currentState === 'emergency') {
+              StateMachine.setState('normal', { fromBridge: true });
+            }
+            this.renderCallMode();
+            this.showCallStatus('cancelled', 'Emergency call cancelled');
+          } else if (d.event === 'autopilot') {
+            if (StateMachine.currentState !== 'autopilot') {
+              StateMachine.setState('autopilot', { fromBridge: true });
+            }
+            this.renderCallMode();
+          } else if (d.event === 'call-status') {
+            this.showCallStatus(d.status, d.message);
+          } else if (d.event === 'call-mode') {
+            this.renderCallMode(d.mode, d.liveAvailable, d.unavailableReason, d.locked);
+          } else if (d.event === 'intervention') {
+            if (d.temp !== undefined) MattressControls.setTemp(d.temp);
+            if (d.angle !== undefined) MattressControls.setAngle(d.angle);
+          } else if (d.event === 'reading' && d.hr) {
+            document.getElementById('bedLiveHr').textContent = `${d.hr} bpm`;
+            FloatingPanel.updateStatus(StateMachine.currentState, d.hr);
+          }
+        };
+
+        es.onerror = () => {
+          this.connected = false;
+        };
+      }
+    };
+
+    /* =====================================================================
+       14. INITIALIZATION
        ===================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
       Ambient3D.init();
       Charts.init();
+      BioScanner.initControls();
       FloatingPanel.init();
       StateMachine.init();
       SleepCalculator.calculate();
       App.initLiveClock();
+      App.initKeyboardShortcuts();
+      SimBridge.init();
     });
   </script>
 </body>
