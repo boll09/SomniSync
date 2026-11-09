@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>SomniSync — Sleep, in sync</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --surface: rgba(24, 27, 35, .76);
+      --surface-strong: #171a22;
+      --line: rgba(255, 255, 255, .085);
+      --text: #f4f5f7;
+      --muted: #9298a5;
+      --mint: #a4e7d0;
+      --mint-strong: #70d7b4;
+      --blue: #9ebcff;
+      --rose: #ff8c9d;
+      --amber: #f1c27a;
+      --radius: 22px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 75% -10%, rgba(84, 125, 160, .15), transparent 36rem),
+        radial-gradient(ellipse at 6% 40%, rgba(92, 136, 121, .08), transparent 32rem),
+        var(--bg);
+    }
+    button { font: inherit; }
+    button:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(255,255,255,.17) .7px, transparent .7px);
+      background-size: 34px 34px;
+      opacity: .14;
+      mask-image: linear-gradient(to bottom, black, transparent 76%);
+    }
+    .shell { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid rgba(164,231,208,.25);
+      border-radius: 13px;
+      color: var(--mint);
+      background: linear-gradient(145deg, rgba(164,231,208,.13), rgba(164,231,208,.025));
+      box-shadow: 0 0 24px rgba(112,215,180,.08);
+    }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name { font-size: 15px; font-weight: 650; letter-spacing: -.025em; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .topbar-right { display: flex; align-items: center; gap: 22px; }
+    .connection, .live-label { display: flex; align-items: center; gap: 8px; color: #b7bdc8; font-size: 12px; }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint-strong);
+      box-shadow: 0 0 12px rgba(112,215,180,.6);
+    }
+    .clock { color: #d3d6dc; font-size: 12px; font-variant-numeric: tabular-nums; }
+    main { padding: 46px 0 72px; }
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--mint);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow .status-dot { width: 6px; height: 6px; }
+    h1 {
+      margin: 13px 0 8px;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 560;
+      letter-spacing: -.055em;
+      line-height: 1.08;
+    }
+    .intro { margin: 0; max-width: 600px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .session-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .meta-chip {
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.025);
+      color: #b8bdc7;
+      font-size: 11px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(300px, .82fr);
+      gap: 16px;
+      margin-top: 34px;
+    }
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.022));
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 18px 55px rgba(0,0,0,.15);
+    }
+    .card-pad { padding: 22px; }
+    .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .card-title { margin: 0; color: #e8eaf0; font-size: 13px; font-weight: 590; letter-spacing: -.01em; }
+    .card-caption { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .quiet-tag {
+      padding: 6px 9px;
+      border: 1px solid rgba(164,231,208,.14);
+      border-radius: 999px;
+      background: rgba(164,231,208,.055);
+      color: var(--mint);
+      white-space: nowrap;
+      font-size: 10px;
+    }
+    .heart-row { display: flex; align-items: flex-end; gap: 10px; margin-top: 26px; }
+    .heart-number { font-size: clamp(52px, 7vw, 72px); font-weight: 540; letter-spacing: -.07em; line-height: .88; font-variant-numeric: tabular-nums; }
+    .heart-unit { padding-bottom: 6px; color: var(--muted); font-size: 13px; }
+    .heart-icon { margin-left: auto; padding-bottom: 8px; color: var(--mint); }
+    .heart-icon svg { width: 22px; height: 22px; }
+    .heart-icon.pulse svg { animation: heartbeat 1.4s ease-in-out infinite; }
+    .chart-wrap { position: relative; height: 145px; margin: 10px -8px 0; }
+    #heartChart { width: 100%; height: 100%; }
+    .chart-labels { display: flex; justify-content: space-between; margin: -2px 3px 0; color: #757c89; font-size: 10px; }
+    .metric-divider { height: 1px; margin: 20px 0 15px; background: var(--line); }
+    .metric-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+    .metric-foot strong { color: #d7dbe2; font-weight: 560; }
+    .bed-card { position: relative; min-height: 338px; overflow: hidden; }
+    .bed-card:before {
+      position: absolute;
+      content: "";
+      width: 280px;
+      height: 180px;
+      right: -80px;
+      top: 100px;
+      border-radius: 50%;
+      background: rgba(111,153,206,.12);
+      filter: blur(55px);
+    }
+    .bed-visual {
+      position: relative;
+      display: grid;
+      min-height: 170px;
+      place-items: center;
+      margin: 4px 0 8px;
+    }
+    .bed-svg { width: min(100%, 340px); overflow: visible; }
+    .bed-top { transform-origin: 112px 119px; transition: transform 1.8s cubic-bezier(.2,.8,.2,1); }
+    .bed-visual.adjusting .bed-top { filter: drop-shadow(0 0 13px rgba(255,140,157,.22)); }
+    .bed-angle {
+      position: absolute;
+      right: 6px;
+      bottom: 3px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(9,12,17,.66);
+      color: #e2e5eb;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .bed-angle span { color: var(--muted); }
+    .bed-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .bed-stat { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0,0,0,.12); }
+    .bed-stat-label { color: var(--muted); font-size: 10px; }
+    .bed-stat-value { margin-top: 5px; font-size: 15px; font-weight: 570; letter-spacing: -.02em; }
+    .wide-grid { display: grid; grid-template-columns: minmax(0, 1.28fr) minmax(300px, .82fr); gap: 16px; margin-top: 16px; }
+    .agent-card { min-height: 165px; }
+    .agent-header { display: flex; align-items: center; gap: 11px; }
+    .agent-avatar {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid rgba(158,188,255,.18);
+      border-radius: 12px;
+      background: rgba(158,188,255,.08);
+      color: var(--blue);
+    }
+    .agent-avatar svg { width: 18px; height: 18px; }
+    .agent-name { color: #e8eaf0; font-size: 12px; font-weight: 600; }
+    .agent-mode { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .agent-message { display: flex; gap: 10px; margin-top: 18px; color: #c4c9d2; font-size: 12px; line-height: 1.65; }
+    .agent-message:before { content: ""; flex: 0 0 2px; border-radius: 3px; background: var(--mint-strong); }
+    .event-list { display: grid; gap: 15px; margin-top: 17px; }
+    .event { display: grid; grid-template-columns: 8px 1fr auto; align-items: start; gap: 10px; }
+    .event-mark { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--mint-strong); }
+    .event-mark.warn { background: var(--amber); }
+    .event-title { color: #d9dce3; font-size: 11px; }
+    .event-time { color: #777e8a; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .event-desc { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .footer-note { margin: 20px 2px 0; color: #6f7683; font-size: 10px; line-height: 1.6; }
+
+    .incident-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 22px;
+      padding: 15px 16px;
+      border: 1px solid rgba(255,140,157,.28);
+      border-radius: 17px;
+      background: linear-gradient(100deg, rgba(114,34,49,.35), rgba(54,24,34,.34));
+      animation: slide-in .35s ease-out both;
+    }
+    .incident-banner.visible { display: flex; }
+    .incident-copy { display: flex; align-items: center; gap: 12px; }
+    .incident-icon {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 12px;
+      background: rgba(255,140,157,.1);
+      color: var(--rose);
+    }
+    .incident-icon svg { width: 18px; height: 18px; }
+    .incident-title { color: #ffd3d9; font-size: 12px; font-weight: 620; }
+    .incident-text { margin-top: 4px; color: #d89da6; font-size: 10px; }
+    .countdown { color: #fff; font-variant-numeric: tabular-nums; }
+    .cancel-button {
+      padding: 9px 12px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 11px;
+      background: rgba(255,255,255,.07);
+      color: #f2dfe2;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 10px;
+      transition: background .2s, transform .2s;
+    }
+    .cancel-button:hover { transform: translateY(-1px); background: rgba(255,255,255,.12); }
+    .state-normal .status-dot { background: var(--mint-strong); }
+    body.is-emergency .status-dot, body.is-escalated .status-dot { background: var(--rose); box-shadow: 0 0 12px rgba(255,140,157,.55); }
+    body.is-emergency .quiet-tag, body.is-escalated .quiet-tag { color: var(--rose); border-color: rgba(255,140,157,.2); background: rgba(255,140,157,.07); }
+    body.is-emergency .heart-icon { color: var(--rose); }
+    body.is-escalated .heart-icon { color: var(--amber); }
+    body.is-emergency .bed-top, body.is-escalated .bed-top { transform: rotate(12deg); }
+    body.is-emergency .bed-visual, body.is-escalated .bed-visual { animation: bed-glow 2.4s ease-in-out infinite; }
+    body.is-emergency .incident-banner, body.is-escalated .incident-banner { border-color: rgba(255,140,157,.4); }
+    body.is-escalated .incident-banner { background: linear-gradient(100deg, rgba(106,70,25,.32), rgba(54,39,24,.34)); border-color: rgba(241,194,122,.3); }
+    body.is-escalated .incident-title { color: #ffe3b2; }
+    body.is-escalated .incident-text { color: #d5b987; }
+    .presenter {
+      position: fixed;
+      right: max(24px, calc((100vw - 1160px) / 2));
+      bottom: 22px;
+      z-index: 5;
+    }
+    .presenter-toggle {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 14px;
+      border: 1px solid rgba(164,231,208,.2);
+      border-radius: 999px;
+      background: rgba(23,26,34,.88);
+      backdrop-filter: blur(18px);
+      color: #d8e6e1;
+      box-shadow: 0 9px 32px rgba(0,0,0,.38);
+      cursor: pointer;
+      font-size: 11px;
+      transition: transform .2s, border-color .2s, background .2s;
+    }
+    .presenter-toggle:hover { transform: translateY(-2px); border-color: rgba(164,231,208,.43); background: #1b2029; }
+    .presenter-toggle svg { width: 15px; height: 15px; color: var(--mint); }
+    .presenter-panel {
+      position: absolute;
+      right: 0;
+      bottom: 52px;
+      width: min(320px, calc(100vw - 32px));
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 20px;
+      background: rgba(22,25,33,.94);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 20px 70px rgba(0,0,0,.5);
+      transform-origin: bottom right;
+      animation: panel-in .2s ease-out both;
+    }
+    .presenter-panel[hidden] { display: none; }
+    .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .panel-heading h2 { margin: 0; font-size: 12px; font-weight: 620; }
+    .panel-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+    .panel-close {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: rgba(255,255,255,.035);
+      color: #abb1bd;
+      cursor: pointer;
+    }
+    .panel-close svg { width: 13px; height: 13px; }
+    .panel-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 15px 0 11px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: #c7ccd5;
+      font-size: 10px;
+    }
+    .panel-status strong { color: var(--mint); font-weight: 590; }
+    .panel-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .state-button {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.035);
+      color: #c9ced7;
+      cursor: pointer;
+      font-size: 10px;
+      transition: .2s ease;
+    }
+    .state-button:hover { border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.075); }
+    .state-button svg { width: 14px; height: 14px; }
+    .state-button[aria-pressed="true"] { border-color: rgba(164,231,208,.3); color: var(--mint); background: rgba(164,231,208,.075); }
+    .state-button.emergency[aria-pressed="true"] { border-color: rgba(255,140,157,.33); color: var(--rose); background: rgba(255,140,157,.08); }
+    .state-button.emergency svg { color: var(--rose); }
+    .panel-footnote { margin: 11px 2px 0; color: #777e8a; font-size: 9px; line-height: 1.5; }
+    .toast {
+      position: fixed;
+      top: 89px;
+      right: max(24px, calc((100vw - 1160px) / 2));
+      z-index: 7;
+      max-width: min(360px, calc(100vw - 40px));
+      padding: 12px 15px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      background: rgba(24,27,35,.95);
+      color: #e5e8ed;
+      box-shadow: 0 14px 40px rgba(0,0,0,.34);
+      font-size: 11px;
+      line-height: 1.5;
+      animation: slide-in .25s ease-out both;
+    }
+    .toast[hidden] { display: none; }
+    .toast strong { color: var(--mint); }
+    .toast.warning strong { color: var(--rose); }
+    .live-label { color: var(--mint); font-size: 10px; }
+    .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1.8s ease-in-out infinite; }
+    .small-caps { text-transform: uppercase; letter-spacing: .11em; }
+    @keyframes heartbeat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.18); } 28% { transform: scale(1); } 42% { transform: scale(1.12); } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .38; } }
+    @keyframes bed-glow { 0%, 100% { filter: drop-shadow(0 0 0 rgba(255,140,157,0)); } 50% { filter: drop-shadow(0 0 13px rgba(255,140,157,.16)); } }
+    @keyframes slide-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes panel-in { from { opacity: 0; transform: translateY(7px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 32px, 560px); }
+      .topbar { min-height: 68px; }
+      .connection { display: none; }
+      main { padding-top: 34px; }
+      .dashboard-grid, .wide-grid { grid-template-columns: 1fr; }
+      .bed-card { min-height: 0; }
+      .bed-visual { min-height: 155px; }
+      .wide-grid { margin-top: 14px; }
+      .card-pad { padding: 19px; }
+      .incident-banner { align-items: flex-start; }
+    }
+    @media (max-width: 480px) {
+      .shell { width: calc(100% - 28px); }
+      .brand-sub { font-size: 10px; }
+      .clock { font-size: 11px; }
+      .topbar-right { gap: 10px; }
+      h1 { font-size: 35px; }
+      .intro { font-size: 13px; }
+      .session-meta { margin-top: 16px; }
+      .dashboard-grid { margin-top: 24px; }
+      .card { border-radius: 19px; }
+      .incident-banner { flex-direction: column; }
+      .cancel-button { width: 100%; }
+      .presenter { right: 14px; bottom: 14px; }
+      .presenter-panel { bottom: 50px; }
+      .toast { top: 78px; right: 14px; }
+      .footer-note { padding-right: 28px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body class="state-normal">
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="shell topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.2 14.2A8.3 8.3 0 0 1 9.8 3.8 8.5 8.5 0 1 0 20.2 14.2Z"></path>
+          <path d="M17.5 4.5v3M16 6h3"></path>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">SomniSync</div>
+        <div class="brand-sub">Sleep, in sync.</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="connection"><span class="status-dot" aria-hidden="true"></span><span>Mattress connected</span></div>
+      <time class="clock" id="clock" aria-label="Current time">--:--</time>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section aria-labelledby="page-title">
+      <div class="eyebrow"><span class="status-dot" aria-hidden="true"></span><span id="eyebrow-text">Overnight care · monitoring</span></div>
+      <h1 id="page-title">Your night, in sync.</h1>
+      <p class="intro">Quietly keeping an eye on the things that matter, so you can focus on getting the rest you need.</p>
+      <div class="session-meta">
+        <span class="meta-chip">Overnight monitoring · active</span>
+        <span class="meta-chip">Contact-free sensing</span>
+      </div>
+
+      <section id="incident-banner" class="incident-banner" role="alert" aria-live="assertive" aria-hidden="true">
+        <div class="incident-copy">
+          <div class="incident-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path></svg>
+          </div>
+          <div>
+            <div class="incident-title" id="incident-title">Elevated heart rate detected</div>
+            <div class="incident-text" id="incident-text">Mattress adjustment in progress · simulated follow-up in <strong class="countdown" id="countdown">15</strong>s</div>
+          </div>
+        </div>
+        <button class="cancel-button" id="cancel-button" type="button">Cancel simulation</button>
+      </section>
+    </section>
+
+    <section class="dashboard-grid" aria-label="Live sleep metrics">
+      <article class="card card-pad" aria-labelledby="heart-title">
+        <div class="card-heading">
+          <div>
+            <h2 class="card-title" id="heart-title">Heart rate</h2>
+            <p class="card-caption" id="heart-caption">A steady rhythm through the night</p>
+          </div>
+          <span class="quiet-tag" id="heart-status">In range</span>
+        </div>
+        <div class="heart-row">
+          <div class="heart-number" id="heart-value" aria-live="off">68</div>
+          <div class="heart-unit">bpm</div>
+          <div class="heart-icon pulse" id="heart-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11s-8.8-5.8-8.8-11a4.8 4.8 0 0 1 8.8-2.6 4.8 4.8 0 0 1 8.8 2.6Z"></path><path d="M3.5 12h4l2-3.3 3.1 6 2-3H21"></path></svg>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="heartChart" role="img" aria-label="Live heart rate trend chart"></canvas></div>
+        <div class="chart-labels"><span>40 min ago</span><span>20 min ago</span><span>Now</span></div>
+        <div class="metric-divider"></div>
+        <div class="metric-foot"><span>Overnight range</span><strong id="range-label">65–75 bpm</strong></div>
+      </article>
+
+      <article class="card card-pad bed-card" aria-labelledby="bed-title">
+        <div class="card-heading">
+          <div>
+            <h2 class="card-title" id="bed-title">Adaptive mattress</h2>
+            <p class="card-caption" id="bed-caption">Comfort is right where you left it</p>
+          </div>
+          <span class="quiet-tag" id="bed-status">Resting</span>
+        </div>
+        <div class="bed-visual" id="bed-visual">
+          <svg class="bed-svg" viewBox="0 0 360 190" role="img" aria-label="Illustration of the adjustable SomniSync mattress">
+            <defs>
+              <linearGradient id="mattress" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#b4d9d2"></stop><stop offset="1" stop-color="#668f91"></stop></linearGradient>
+              <linearGradient id="base" x1="0" x2="1"><stop stop-color="#444955"></stop><stop offset="1" stop-color="#272b34"></stop></linearGradient>
+            </defs>
+            <ellipse cx="187" cy="158" rx="131" ry="15" fill="#05070a" opacity=".58"></ellipse>
+            <path d="M65 121h225l-13 33H80z" fill="url(#base)" stroke="#59616d" stroke-width="1.4"></path>
+            <path d="M90 151v14m170-14v14" stroke="#626b77" stroke-width="5" stroke-linecap="round"></path>
+            <g class="bed-top" id="bed-top">
+              <path d="M58 119c0-7 5-12 12-12h224c8 0 13 5 13 12v13H58z" fill="url(#mattress)" stroke="#c7e9e1" stroke-opacity=".46" stroke-width="1.5"></path>
+              <path d="M72 109h60v22H72z" rx="10" fill="#d9e8e3" opacity=".78"></path>
+              <path d="M147 109h147" stroke="#d7f0e9" stroke-opacity=".32"></path>
+              <path d="M73 135h220" stroke="#20252c" stroke-opacity=".35"></path>
+            </g>
+            <path d="M46 106h11v35H46z" rx="3" fill="#616977"></path>
+            <circle cx="320" cy="138" r="3" fill="#8ce0c2"></circle>
+            <path d="M321 137l13-10" stroke="#8ce0c2" stroke-opacity=".48" stroke-dasharray="2 3"></path>
+          </svg>
+          <div class="bed-angle"><span>Bed angle&nbsp; </span><strong id="angle-value">0°</strong></div>
+        </div>
+        <div class="bed-stats">
+          <div class="bed-stat"><div class="bed-stat-label">Surface temperature</div><div class="bed-stat-value" id="temperature-value">24.0°C</div></div>
+          <div class="bed-stat"><div class="bed-stat-label">Movement</div><div class="bed-stat-value" id="movement-value">No adjustment needed</div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="wide-grid" aria-label="SomniSync assistant and recent activity">
+      <article class="card card-pad agent-card" aria-labelledby="agent-title">
+        <div class="agent-header">
+          <div class="agent-avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3"></path><circle cx="12" cy="12" r="5"></circle><path d="m9.5 12 1.7 1.7 3.5-3.5"></path></svg>
+          </div>
+          <div><div class="agent-name" id="agent-title">Somni AI</div><div class="agent-mode" id="agent-mode">Observing · no action needed</div></div>
+          <div class="live-label" style="margin-left:auto"><span class="pulse-dot" aria-hidden="true"></span><span class="small-caps">Live</span></div>
+        </div>
+        <div class="agent-message" id="agent-message" aria-live="polite">Your readings are within their usual range. I’ll continue monitoring quietly and adjust the bed only if needed.</div>
+      </article>
+      <article class="card card-pad" aria-labelledby="activity-title">
+        <div class="card-heading"><div><h2 class="card-title" id="activity-title">While you rest</h2><p class="card-caption">A little reassurance, in real time</p></div></div>
+        <div class="event-list" id="event-list" aria-live="polite">
+          <div class="event"><span class="event-mark"></span><div><div class="event-title">Sensors are in sync</div><div class="event-desc">Contact-free monitoring is active</div></div><time class="event-time" id="event-time">Now</time></div>
+          <div class="event"><span class="event-mark"></span><div><div class="event-title">Restful sleep detected</div><div class="event-desc">Breathing and heart rate are steady</div></div><time class="event-time">Earlier</time></div>
+        </div>
+      </article>
+    </section>
+    <p class="footer-note">SomniSync is an academic prototype. Vital readings and emergency actions are simulated for demonstration only; this dashboard is not a medical device or emergency service.</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <aside class="presenter" aria-label="Presenter controls">
+    <section class="presenter-panel" id="presenter-panel" aria-label="Demonstration state controls" hidden>
+      <div class="panel-heading">
+        <div><h2>Demonstration controls</h2><p>Change the live scenario discreetly.</p></div>
+        <button class="panel-close" id="panel-close" type="button" aria-label="Close demonstration controls">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"></path></svg>
+        </button>
+      </div>
+      <div class="panel-status"><span>Current scenario</span><strong id="panel-state">Normal monitoring</strong></div>
+      <div class="panel-actions">
+        <button class="state-button normal" id="normal-button" type="button" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"></path></svg>1 · Normal
+        </button>
+        <button class="state-button emergency" id="emergency-button" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9 2.7 17a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path></svg>2 · Escalation
+        </button>
+      </div>
+      <p class="panel-footnote">All readings, bed movements, and follow-up actions are simulated. No calls or messages are sent.</p>
+    </section>
+    <button class="presenter-toggle" id="panel-toggle" type="button" aria-expanded="false" aria-controls="presenter-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"></path><path d="m19.4 15 .1.1a1.8 1.8 0 1 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .8v.2a1.8 1.8 0 1 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.8l-.1.1a1.8 1.8 0 1 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.8-3h-.2a1.8 1.8 0 1 1 0-3.6h.2a1.8 1.8 0 0 0 .8-3l-.1-.1a1.8 1.8 0 1 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.8v-.2a1.8 1.8 0 1 1 3.6 0v.2a1.8 1.8 0 0 0 3 .8l.1-.1a1.8 1.8 0 1 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .8 3h.2a1.8 1.8 0 1 1 0 3.6h-.2a1.8 1.8 0 0 0-.8 3Z"></path></svg>
+      <span>Demo controls</span>
+    </button>
+  </aside>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (selector) => document.querySelector(selector);
+      const chart = $("#heartChart");
+      const context = chart.getContext("2d");
+      const readings = Array.from({ length: 42 }, (_, index) => 68 + Math.round(Math.sin(index / 4) * 2));
+      const state = { mode: "normal", bpm: 68, secondsLeft: 15, countdownTimer: null, readingTimer: null, toastTimer: null, bedTimer: null };
+      const normalButton = $("#normal-button");
+      const emergencyButton = $("#emergency-button");
+
+      function randomBetween(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function updateClock() {
+        $("#clock").textContent = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date());
+      }
+
+      function drawChart() {
+        const bounds = chart.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        chart.width = Math.round(bounds.width * ratio);
+        chart.height = Math.round(bounds.height * ratio);
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const width = bounds.width;
+        const height = bounds.height;
+        const pad = { top: 12, right: 4, bottom: 12, left: 4 };
+        const min = state.mode === "normal" ? 60 : 120;
+        const max = state.mode === "normal" ? 80 : 155;
+        const x = (index) => pad.left + index * (width - pad.left - pad.right) / (readings.length - 1);
+        const y = (value) => pad.top + (max - value) * (height - pad.top - pad.bottom) / (max - min);
+
+        context.clearRect(0, 0, width, height);
+        context.strokeStyle = "rgba(255,255,255,.055)";
+        context.lineWidth = 1;
+        for (let line = 0; line < 3; line += 1) {
+          const lineY = pad.top + line * (height - pad.top - pad.bottom) / 2;
+          context.beginPath();
+          context.moveTo(0, lineY);
+          context.lineTo(width, lineY);
+          context.stroke();
+        }
+        const color = state.mode === "normal" ? "#8de1c2" : state.mode === "escalated" ? "#f1c27a" : "#ff8c9d";
+        const gradient = context.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, state.mode === "normal" ? "rgba(141,225,194,.22)" : "rgba(255,140,157,.22)");
+        gradient.addColorStop(1, "rgba(141,225,194,0)");
+        context.beginPath();
+        readings.forEach((value, index) => {
+          if (index === 0) context.moveTo(x(index), y(value));
+          else context.lineTo(x(index), y(value));
+        });
+        context.lineTo(x(readings.length - 1), height);
+        context.lineTo(x(0), height);
+        context.closePath();
+        context.fillStyle = gradient;
+        context.fill();
+        context.beginPath();
+        readings.forEach((value, index) => {
+          if (index === 0) context.moveTo(x(index), y(value));
+          else context.lineTo(x(index), y(value));
+        });
+        context.lineWidth = 2;
+        context.lineJoin = "round";
+        context.lineCap = "round";
+        context.strokeStyle = color;
+        context.shadowColor = color;
+        context.shadowBlur = 9;
+        context.stroke();
+        context.shadowBlur = 0;
+        context.beginPath();
+        context.arc(x(readings.length - 1), y(readings[readings.length - 1]), 3.2, 0, Math.PI * 2);
+        context.fillStyle = color;
+        context.fill();
+      }
+
+      function pushReading(bpm) {
+        state.bpm = bpm;
+        readings.push(bpm);
+        readings.shift();
+        $("#heart-value").textContent = String(bpm);
+        $("#panel-state").textContent = state.mode === "normal" ? "Normal monitoring" : state.mode === "emergency" ? "Escalation pending" : "Simulated follow-up";
+        $("#heart-status").textContent = state.mode === "normal" ? "In range" : state.mode === "emergency" ? "Elevated" : "Follow-up simulated";
+        drawChart();
+      }
+
+      function toast(message, warning = false) {
+        const element = $("#toast");
+        element.classList.toggle("warning", warning);
+        element.innerHTML = message;
+        element.hidden = false;
+        window.clearTimeout(state.toastTimer);
+        state.toastTimer = window.setTimeout(() => { element.hidden = true; }, 4200);
+      }
+
+      function setCountdown(seconds) {
+        $("#countdown").textContent = String(seconds);
+        const action = state.mode === "escalated" ? "Simulated follow-up completed" : "Mattress adjustment in progress";
+        $("#incident-text").innerHTML = state.mode === "escalated"
+          ? `${action} · no external services contacted`
+          : `${action} · simulated follow-up in <strong class="countdown" id="countdown">${seconds}</strong>s`;
+      }
+
+      function resetBed() {
+        window.clearTimeout(state.bedTimer);
+        $("#angle-value").textContent = "0°";
+        $("#temperature-value").textContent = "24.0°C";
+        $("#movement-value").textContent = "No adjustment needed";
+        $("#bed-caption").textContent = "Comfort is right where you left it";
+        $("#bed-status").textContent = "Resting";
+        $("#bed-visual").classList.remove("adjusting");
+      }
+
+      function startEmergency() {
+        window.clearInterval(state.countdownTimer);
+        window.clearInterval(state.readingTimer);
+        window.clearTimeout(state.bedTimer);
+        state.mode = "emergency";
+        state.secondsLeft = 15;
+        document.body.classList.remove("state-normal", "is-escalated");
+        document.body.classList.add("is-emergency");
+        $("#eyebrow-text").textContent = "Elevated reading · checking in";
+        $("#heart-caption").textContent = "Heart rate is above the usual range";
+        $("#range-label").textContent = "130–145 bpm";
+        $("#bed-caption").textContent = "Making a gentle comfort adjustment";
+        $("#bed-status").textContent = "Adjusting";
+        $("#movement-value").textContent = "Raising head section";
+        $("#agent-mode").textContent = "Responding · adjustment underway";
+        $("#agent-message").textContent = "I noticed an elevated reading. The mattress is gently raising the head section while I monitor for changes. This is a simulated demonstration.";
+        $("#incident-title").textContent = "Elevated heart rate detected";
+        $("#incident-banner").classList.add("visible");
+        $("#incident-banner").setAttribute("aria-hidden", "false");
+        $("#cancel-button").textContent = "Cancel simulation";
+        $("#normal-button").setAttribute("aria-pressed", "false");
+        emergencyButton.setAttribute("aria-pressed", "true");
+        $("#bed-visual").classList.add("adjusting");
+        $("#angle-value").textContent = "12°";
+        $("#temperature-value").textContent = "22.0°C";
+        $("#panel-state").textContent = "Escalation pending";
+        $("#incident-text").innerHTML = `Mattress adjustment in progress · simulated follow-up in <strong class="countdown" id="countdown">15</strong>s`;
+        pushReading(randomBetween(130, 145));
+        window.setTimeout(() => {
+          if (state.mode === "emergency") $("#movement-value").textContent = "12° adjustment complete";
+        }, 1300);
+        state.readingTimer = window.setInterval(() => {
+          if (state.mode === "emergency") pushReading(randomBetween(130, 145));
+        }, 2200);
+        state.countdownTimer = window.setInterval(() => {
+          if (state.mode !== "emergency") return;
+          state.secondsLeft -= 1;
+          setCountdown(state.secondsLeft);
+          if (state.secondsLeft <= 0) completeEscalation();
+        }, 1000);
+        addEvent("Elevated reading detected", "Mattress adjustment started · demo only", true);
+        toast("<strong>Check-in started.</strong> Mattress adjustment is simulated.", true);
+      }
+
+      function completeEscalation() {
+        window.clearInterval(state.countdownTimer);
+        state.countdownTimer = null;
+        window.clearInterval(state.readingTimer);
+        state.readingTimer = null;
+        state.mode = "escalated";
+        document.body.classList.remove("is-emergency");
+        document.body.classList.add("is-escalated");
+        $("#eyebrow-text").textContent = "Demo follow-up complete";
+        $("#incident-title").textContent = "Demonstration follow-up completed";
+        $("#incident-text").textContent = "No external services contacted · use the controls to return to normal";
+        $("#cancel-button").textContent = "Return to normal";
+        $("#heart-caption").textContent = "Elevated reading · demo follow-up complete";
+        $("#bed-caption").textContent = "Comfort adjustment held for the demonstration";
+        $("#bed-status").textContent = "Adjusted";
+        $("#movement-value").textContent = "12° adjustment held";
+        $("#agent-mode").textContent = "Demo complete · awaiting presenter";
+        $("#agent-message").textContent = "The 15-second grace period ended. The prototype has recorded a simulated follow-up; it has not placed a call or sent a message.";
+        $("#panel-state").textContent = "Simulated follow-up";
+        emergencyButton.setAttribute("aria-pressed", "true");
+        pushReading(randomBetween(130, 145));
+        addEvent("Simulated follow-up complete", "Grace period ended · no dispatch was made", true);
+        toast("<strong>Demo follow-up complete.</strong> No call or message was sent.", true);
+      }
+
+      function setNormal(showToast = true) {
+        window.clearInterval(state.countdownTimer);
+        window.clearInterval(state.readingTimer);
+        window.clearTimeout(state.bedTimer);
+        state.countdownTimer = null;
+        state.readingTimer = null;
+        const wasActive = state.mode !== "normal";
+        state.mode = "normal";
+        state.secondsLeft = 15;
+        document.body.classList.remove("is-emergency", "is-escalated");
+        document.body.classList.add("state-normal");
+        $("#eyebrow-text").textContent = "Overnight care · monitoring";
+        $("#heart-caption").textContent = "A steady rhythm through the night";
+        $("#range-label").textContent = "65–75 bpm";
+        $("#agent-mode").textContent = "Observing · no action needed";
+        $("#agent-message").textContent = "Your readings are within their usual range. I’ll continue monitoring quietly and adjust the bed only if needed.";
+        $("#incident-banner").classList.remove("visible");
+        $("#incident-banner").setAttribute("aria-hidden", "true");
+        $("#normal-button").setAttribute("aria-pressed", "true");
+        emergencyButton.setAttribute("aria-pressed", "false");
+        $("#panel-state").textContent = "Normal monitoring";
+        resetBed();
+        pushReading(randomBetween(65, 75));
+        state.readingTimer = window.setInterval(() => {
+          if (state.mode === "normal") pushReading(randomBetween(65, 75));
+        }, 2600);
+        if (showToast && wasActive) toast("<strong>Normal monitoring restored.</strong> The simulation has been reset.");
+      }
+
+      function addEvent(title, description, warning = false) {
+        const list = $("#event-list");
+        const row = document.createElement("div");
+        row.className = "event";
+        const marker = document.createElement("span");
+        marker.className = warning ? "event-mark warn" : "event-mark";
+        const copy = document.createElement("div");
+        const heading = document.createElement("div");
+        heading.className = "event-title";
+        heading.textContent = title;
+        const detail = document.createElement("div");
+        detail.className = "event-desc";
+        detail.textContent = description;
+        const time = document.createElement("time");
+        time.className = "event-time";
+        time.textContent = "Now";
+        copy.append(heading, detail);
+        row.append(marker, copy, time);
+        list.prepend(row);
+        while (list.children.length > 3) list.lastElementChild.remove();
+      }
+
+      function togglePanel(forceOpen) {
+        const panel = $("#presenter-panel");
+        const isOpen = forceOpen === undefined ? panel.hidden : forceOpen;
+        panel.hidden = !isOpen;
+        $("#panel-toggle").setAttribute("aria-expanded", String(isOpen));
+        if (isOpen) $("#panel-close").focus();
+      }
+
+      $("#panel-toggle").addEventListener("click", () => togglePanel());
+      $("#panel-close").addEventListener("click", () => {
+        togglePanel(false);
+        $("#panel-toggle").focus();
+      });
+      normalButton.addEventListener("click", () => setNormal());
+      emergencyButton.addEventListener("click", startEmergency);
+      $("#cancel-button").addEventListener("click", () => setNormal());
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !$("#presenter-panel").hidden) {
+          togglePanel(false);
+          $("#panel-toggle").focus();
+        }
+      });
+      window.addEventListener("resize", drawChart);
+
+      updateClock();
+      window.setInterval(updateClock, 30000);
+      setNormal(false);
+      drawChart();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2553 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SomniSync - Nocturnal Stroke Prevention & Bio-Intelligence Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Three.js (r128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            night: { 950: '#060a17', 900: '#0b1124', 850: '#101833', 800: '#162144', 700: '#213163' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at 15% 15%, #131c38 0%, #060a17 78%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b1124; }
+    ::-webkit-scrollbar-thumb { background: #213163; border-radius: 9999px; }
+    .glass-card {
+      background: rgba(16, 24, 51, 0.74);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .glass-card:hover { border-color: rgba(99, 102, 241, 0.25); }
+    .glass-highlight {
+      background: rgba(22, 33, 68, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(20, 184, 166, 0.28);
+    }
+    .tab-pane { display: none; animation: fadeIn 0.28s ease-out forwards; }
+    .tab-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(20, 184, 166, 0.22));
+      border-color: rgba(20, 184, 166, 0.55);
+      color: #fff;
+      box-shadow: 0 4px 14px -3px rgba(20, 184, 166, 0.25);
+    }
+    @keyframes distress-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55), inset 0 0 25px rgba(244, 63, 94, 0.25); border-color: rgba(244, 63, 94, 0.85); }
+      50% { box-shadow: 0 0 28px 6px rgba(244, 63, 94, 0.35), inset 0 0 45px rgba(244, 63, 94, 0.45); border-color: rgba(251, 113, 133, 1); }
+    }
+    .distress-alarm-active { animation: distress-pulse 1.1s infinite ease-in-out; }
+    @keyframes radar-wave {
+      0% { opacity: 0.65; transform: scaleY(0.85); }
+      50% { opacity: 0.25; transform: scaleY(1.06); }
+      100% { opacity: 0.65; transform: scaleY(0.85); }
+    }
+    .sensor-cone { animation: radar-wave 2.4s infinite ease-in-out; transform-origin: bottom center; }
+    @keyframes float-up {
+      0% { transform: translateY(8px); opacity: 0; }
+      50% { opacity: 0.85; }
+      100% { transform: translateY(-22px); opacity: 0; }
+    }
+    .heat-wave-line { animation: float-up 2s infinite linear; }
+    @keyframes snow-fall {
+      0% { transform: translateY(-15px); opacity: 0; }
+      50% { opacity: 0.9; }
+      100% { transform: translateY(18px); opacity: 0; }
+    }
+    .cool-particle { animation: snow-fall 2.2s infinite linear; }
+    .breath-circle-transition { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.6s ease; }
+    input[type="range"] { accent-color: #14b8a6; }
+  </style>
+</head>
+<body class="antialiased text-slate-100 pb-16 relative">
+
+  <!-- Background Starry Sky & Circadian Aurora -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <canvas id="starryCanvas" class="w-full h-full opacity-65"></canvas>
+    <div id="auroraGlow1" class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-600/15 blur-[115px] transition-colors duration-1000"></div>
+    <div id="auroraGlow2" class="absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full bg-teal-500/10 blur-[130px] transition-colors duration-1000"></div>
+  </div>
+
+  <!-- Top Header -->
+  <header class="border-b border-slate-800/80 bg-night-950/90 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-teal-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white shrink-0">
+          <i data-lucide="moon-star" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-teal-100 to-teal-300 bg-clip-text text-transparent">
+              SomniSync
+            </h1>
+            <span class="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span> Stroke Guard AI
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium">Nocturnal Stroke Prevention & Bio-Intelligence Dashboard</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <button onclick="App.switchTab('tab-somnisync'); SomniSync.startAutoStory();" type="button" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-rose-600/90 to-amber-600/90 text-white border border-rose-400/40 hover:opacity-95 transition flex items-center gap-1.5 shadow-lg shadow-rose-600/20">
+          <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Run Stroke Demo (Video)</span>
+        </button>
+        <button onclick="App.switchTab('tab-relax')" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-teal-950/80 text-teal-300 border border-teal-700/60 hover:bg-teal-900/80 transition flex items-center gap-1.5">
+          <i data-lucide="headphones" class="w-3.5 h-3.5 text-teal-400"></i>
+          <span class="hidden lg:inline">Relax & Brainwaves</span>
+        </button>
+        <button id="btnFireworksTest" type="button" title="Trigger Celebration Fireworks" class="p-2 text-xs font-semibold rounded-xl bg-amber-950/60 text-amber-300 border border-amber-700/50 hover:bg-amber-900/70 transition">
+          <i data-lucide="party-popper" class="w-4 h-4"></i>
+        </button>
+        <button id="btnSampleData" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-indigo-950/70 text-indigo-300 border border-indigo-700/50 hover:bg-indigo-900 transition flex items-center gap-1">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-teal-400"></i>
+          <span class="hidden xl:inline">Load 7-Day Sample</span>
+        </button>
+        <button id="btnClearData" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/60 transition flex items-center gap-1" title="Clear Data">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span class="hidden xl:inline">Clear Data</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 6-Tab Navigation Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-800/60 bg-night-900/60">
+      <nav class="flex items-center space-x-1.5 overflow-x-auto py-2 no-scrollbar">
+        <button type="button" data-tab="tab-input" class="tab-btn active px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="clipboard-edit" class="w-4 h-4 text-teal-400"></i>
+          <span>1. Data Entry & 3D Scan</span>
+        </button>
+        <button type="button" data-tab="tab-dashboard" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
+          <span>2. Dashboard & Alerts</span>
+        </button>
+        <button type="button" data-tab="tab-somnisync" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="heart-pulse" class="w-4 h-4 text-rose-400"></i>
+          <span>3. SomniSync Live & Stroke Alert</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 font-extrabold">LIVE SENSOR</span>
+        </button>
+        <button type="button" data-tab="tab-analytics" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
+          <span>4. Sleep Architecture</span>
+          <span id="warningCountBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">Alerts</span>
+        </button>
+        <button type="button" data-tab="tab-cycles" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i>
+          <span>5. 90m Cycles & Chronotype</span>
+        </button>
+        <button type="button" data-tab="tab-relax" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="wind" class="w-4 h-4 text-emerald-400"></i>
+          <span>6. Breathwork & Soundscape</span>
+        </button>
+        <button type="button" data-tab="tab-history" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 border border-transparent hover:text-white transition flex items-center gap-1.5 whitespace-nowrap">
+          <i data-lucide="calendar-days" class="w-4 h-4 text-purple-400"></i>
+          <span>7. History & Trends</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-10">
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ===================================================================
+         TAB 1: DATA ENTRY & 3D AVATAR STUDIO
+         =================================================================== -->
+    <div id="tab-input" class="tab-pane active">
+      <div class="glass-card rounded-3xl p-5 sm:p-8 shadow-2xl max-w-6xl mx-auto border border-teal-500/20">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 mb-6 gap-3">
+          <div class="flex items-center gap-3">
+            <span class="p-2.5 rounded-xl bg-teal-500/15 text-teal-400"><i data-lucide="scan-face" class="w-6 h-6"></i></span>
+            <div>
+              <h2 class="font-extrabold text-lg text-white tracking-tight">Biometric Data Entry & 3D Scan</h2>
+              <p class="text-xs text-slate-400 mt-0.5">Input your daily metrics to generate the intelligent dashboard.</p>
+            </div>
+          </div>
+          <input type="date" id="recordDate" required class="bg-night-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+
+        <form id="healthForm" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Left Column: Sections 1 & 2 -->
+          <div class="space-y-6">
+            <!-- Section 1: Sleep Timing & Quality -->
+            <div class="p-4 rounded-xl bg-night-900/80 border border-slate-800 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                  <i data-lucide="moon" class="w-4 h-4 text-teal-400"></i> 1. Sleep Timing & Quality
+                </span>
+                <button type="button" onclick="App.switchTab('tab-cycles')" class="text-[11px] text-teal-400 hover:underline">90m Cycle Calc →</button>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Bedtime</label>
+                  <input type="time" id="bedTime" value="23:00" required class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Wake Time</label>
+                  <input type="time" id="wakeTime" value="06:30" required class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Nighttime Awakenings</label>
+                  <input type="number" id="awakenings" min="0" max="15" value="1" class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Morning Feel (1-5)</label>
+                  <div class="flex items-center justify-between bg-night-850 border border-slate-700 rounded-lg px-3 py-2" id="starRating">
+                    <button type="button" class="star text-amber-400 text-base hover:scale-110" data-val="1">★</button>
+                    <button type="button" class="star text-amber-400 text-base hover:scale-110" data-val="2">★</button>
+                    <button type="button" class="star text-amber-400 text-base hover:scale-110" data-val="3">★</button>
+                    <button type="button" class="star text-amber-400 text-base hover:scale-110" data-val="4">★</button>
+                    <button type="button" class="star text-slate-600 text-base hover:scale-110" data-val="5">★</button>
+                  </div>
+                  <input type="hidden" id="perceivedQuality" value="4">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: Cardiovascular, CNS & Nocturnal Stroke Indicators -->
+            <div class="p-4 rounded-xl bg-night-900/80 border border-rose-500/25 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
+                  <i data-lucide="heart-pulse" class="w-4 h-4 text-rose-400"></i> 2. Cardiovascular & Stroke Guard
+                </span>
+                <button type="button" onclick="App.switchTab('tab-somnisync')" class="text-[10px] px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30">SomniSync Live</button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Resting HR (RHR bpm)</label>
+                  <input type="number" id="rhr" min="35" max="130" value="58" class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5" title="Nocturnal heart rate surge at 2:00-3:00 AM (>100 bpm indicates distress)">Max Night HR Spike (bpm)</label>
+                  <input type="number" id="peakHr" min="45" max="190" value="66" class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-rose-200 font-bold">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1.5">Systolic BP</label>
+                  <input type="number" id="sysBp" min="80" max="220" value="118" class="w-full bg-night-850 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1.5">Diastolic BP</label>
+                  <input type="number" id="diaBp" min="50" max="140" value="76" class="w-full bg-night-850 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1.5">Peak Snoring (dB)</label>
+                  <input type="number" id="snoringDb" min="20" max="95" value="36" class="w-full bg-night-850 border border-slate-700 rounded-lg px-2.5 py-2 text-sm text-indigo-200 font-bold">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Breathing / Apnea Risk</label>
+                  <select id="breathingPattern" class="w-full bg-night-850 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-200">
+                    <option value="normal" selected>Normal (12-16/min)</option>
+                    <option value="mild">Mild Snoring</option>
+                    <option value="irregular">Irregular - Apnea Risk</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Morning CNS Fatigue (1-5)</label>
+                  <select id="soreness" class="w-full bg-night-850 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-200">
+                    <option value="1">1 - Fully Refreshed</option>
+                    <option value="2" selected>2 - Normal & Energized</option>
+                    <option value="3">3 - Mild Muscle Stiffness</option>
+                    <option value="4">4 - Fatigued / Brain Fog</option>
+                    <option value="5">5 - Exhausted / Overload</option>
+                  </select>
+                </div>
+              </div>
+              <input type="hidden" id="mattressTemp" value="24.0">
+            </div>
+          </div>
+
+          <!-- Right Column: Section 3 & Submit -->
+          <div class="space-y-6">
+            <div class="p-4 rounded-xl bg-night-900/80 border border-slate-800 space-y-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-teal-300 flex items-center gap-1.5">
+                  <i data-lucide="scan-face" class="w-4 h-4 text-teal-400"></i> 3. Biometric 3D Scanner
+                </span>
+                <div class="inline-flex rounded-lg bg-night-950 p-1 border border-slate-800">
+                  <button type="button" id="btnBodyStandard" class="px-2.5 py-1 rounded text-xs font-bold bg-teal-600 text-white transition">Standard Build</button>
+                  <button type="button" id="btnBodyAthletic" class="px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:text-white transition">Athletic / V-Taper</button>
+                </div>
+              </div>
+
+              <!-- 3D HOLOGRAPHIC SCANNER POD -->
+              <div class="relative rounded-2xl bg-gradient-to-b from-night-950 via-[#081229] to-night-950 border border-teal-500/30 overflow-hidden">
+                <!-- Top HUD Overlays -->
+                <div class="absolute top-3 left-3 right-3 z-10 flex items-start justify-between pointer-events-none">
+                  <div class="space-y-1.5">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-night-950/85 border border-teal-500/40">
+                      <span class="w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping"></span>
+                      <span class="text-xs font-extrabold text-white" id="hudBmiText">BMI: 22.5</span>
+                      <span class="text-[11px] font-bold text-teal-300 border-l border-slate-700 pl-2" id="hudCategoryText">Optimal</span>
+                    </div>
+                    <div class="block text-[11px] text-slate-300 bg-night-950/75 px-2.5 py-1 rounded-md border border-slate-800" id="hudBmrText">
+                      🔥 BMR: ~1580 kcal • WHtR: 0.45
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col items-end gap-1.5 pointer-events-auto">
+                    <div id="hudHeartBadge" class="px-3 py-1.5 rounded-lg bg-rose-950/85 border border-rose-500/40 flex items-center gap-2 text-xs font-bold text-rose-300">
+                      <i data-lucide="heart" class="w-4 h-4 text-rose-400 animate-pulse"></i>
+                      <span id="hudRhrLive">58 BPM</span>
+                    </div>
+                    <div class="flex gap-1.5 mt-1">
+                      <button type="button" id="btnToggleAutoRotate" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-teal-300 border border-teal-500/30">360° Rotate</button>
+                      <button type="button" id="btnToggleWireframe" class="px-2.5 py-1 rounded bg-night-900/90 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">Wireframe</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Vertical Height Ruler (130cm - 210cm) -->
+                <div class="absolute right-2 top-16 bottom-10 w-10 z-10 flex flex-col justify-between items-end pointer-events-none select-none pr-1.5 border-r border-teal-500/30 text-[10px] font-mono text-teal-400/80">
+                  <span>210cm</span><span>190cm</span><span>170cm</span><span>150cm</span><span>130cm</span>
+                  <div id="hudHeightMarker" class="absolute right-0 px-1.5 py-0.5 rounded-l bg-teal-500 text-night-950 font-extrabold text-[10px] transition-all duration-150" style="bottom: 50%;">170cm</div>
+                </div>
+
+                <!-- Three.js Mount -->
+                <div id="avatar3DContainer" class="w-full h-[320px] cursor-grab active:cursor-grabbing"></div>
+
+                <div class="px-3 py-2 bg-night-950/90 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Drag horizontally to rotate • Live Bio-Feedback Sync</span>
+                  <span id="hudDimText" class="font-bold text-slate-200">170 cm • 65.0 kg</span>
+                </div>
+              </div>
+
+              <!-- Height & Weight Sliders -->
+              <div class="grid grid-cols-2 gap-3 mt-2">
+                <div class="bg-night-950/60 p-3 rounded-xl border border-slate-800">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="text-xs text-slate-300 font-semibold">Height (cm)</label>
+                    <input type="number" id="height" min="130" max="220" value="170" class="w-16 bg-night-850 border border-slate-700 rounded px-2 py-1 text-sm font-bold text-teal-300 text-right">
+                  </div>
+                  <input type="range" id="heightSlider" min="135" max="210" step="1" value="170" class="w-full h-1.5 cursor-pointer">
+                </div>
+                <div class="bg-night-950/60 p-3 rounded-xl border border-slate-800">
+                  <div class="flex justify-between items-center mb-1.5">
+                    <label class="text-xs text-slate-300 font-semibold">Weight (kg)</label>
+                    <input type="number" id="weight" min="30" max="180" step="0.5" value="65" class="w-16 bg-night-850 border border-slate-700 rounded px-2 py-1 text-sm font-bold text-indigo-300 text-right">
+                  </div>
+                  <input type="range" id="weightSlider" min="35" max="150" step="0.5" value="65" class="w-full h-1.5 cursor-pointer">
+                </div>
+              </div>
+
+              <!-- Water, Exercise & Caffeine -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Water Intake (ml)</label>
+                  <input type="number" id="waterIntake" min="0" step="50" value="2100" class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+                <div>
+                  <label class="block text-xs text-slate-400 mb-1.5">Exercise (mins)</label>
+                  <input type="number" id="exerciseTime" min="0" max="300" value="35" class="w-full bg-night-850 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <div>
+                  <span class="text-sm font-bold text-slate-300 block">Late Caffeine / Alcohol (After 3:00 PM)</span>
+                  <span class="text-xs text-slate-500">Triggers vasoconstriction & reduces Deep N3 sleep</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input type="time" id="lastCaffeineTime" value="16:30" class="hidden bg-night-900 border border-rose-700/60 rounded px-2 py-1.5 text-xs text-rose-200">
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="caffeineIntake" class="sr-only peer">
+                    <div class="w-12 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500 hover:opacity-95 text-night-950 font-black rounded-xl shadow-[0_0_20px_rgba(20,184,166,0.3)] transition transform hover:scale-[1.01] flex items-center justify-center gap-2 text-sm uppercase tracking-widest">
+              <i data-lucide="cpu" class="w-5 h-5"></i>
+              <span>Analyze Biometrics & Generate Dashboard</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 2: DASHBOARD & ALERTS
+         =================================================================== -->
+    <div id="tab-dashboard" class="tab-pane">
+      <div class="space-y-6 max-w-6xl mx-auto">
+        <!-- Massive Hero Row: Sleep Score & Stroke Guard -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Massive Score Card -->
+          <div class="glass-highlight rounded-3xl p-8 relative overflow-hidden flex flex-col items-center text-center shadow-[0_0_40px_rgba(20,184,166,0.15)]">
+            <!-- Optimal Recovery Fireworks Banner -->
+            <div id="optimalRecoveryBanner" class="hidden absolute top-4 inset-x-4 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-950/90 via-emerald-900/90 to-indigo-950/90 border border-teal-400/50 flex items-center justify-between z-20">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield-check" class="w-5 h-5 text-teal-300"></i>
+                <span class="text-xs sm:text-sm font-bold text-teal-200">OPTIMAL RECOVERY & HEART SAFE!</span>
+              </div>
+              <button type="button" onclick="App.triggerFireworks()" class="px-2.5 py-1 rounded bg-teal-500/20 text-teal-200 text-xs font-semibold border border-teal-400/30">🎆 Celebrate</button>
+            </div>
+
+            <!-- Emergency Stroke & Apnea Alert Banner -->
+            <div id="emergencyStrokeBanner" class="hidden absolute top-4 inset-x-4 px-4 py-3 rounded-xl bg-rose-950/90 border-2 border-rose-500 distress-alarm-active flex flex-col sm:flex-row items-center justify-between gap-3 z-20">
+              <div class="flex items-center gap-3">
+                <i data-lucide="siren" class="w-6 h-6 text-rose-400 animate-bounce shrink-0"></i>
+                <div class="text-left">
+                  <span class="text-sm font-extrabold uppercase tracking-wide text-rose-200 block">CRITICAL: HIGH STROKE & APNEA RISK!</span>
+                  <span class="text-[11px] text-rose-300/90">Severe nocturnal distress detected.</span>
+                </div>
+              </div>
+              <button type="button" onclick="App.switchTab('tab-somnisync'); SomniSync.applyScenario('autopilot');" class="px-3.5 py-2 rounded-lg bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold shrink-0 shadow-lg">
+                Activate Auto-Pilot
+              </button>
+            </div>
+
+            <div class="relative w-48 h-48 sm:w-56 sm:h-56 mx-auto flex items-center justify-center mt-12 sm:mt-10 shrink-0">
+              <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" stroke="currentColor" stroke-width="6" class="text-slate-800" fill="transparent" />
+                <circle id="scoreCircle" cx="50" cy="50" r="42" stroke="currentColor" stroke-width="6" stroke-linecap="round" class="text-emerald-400 transition-all duration-1000 ease-out" fill="transparent" stroke-dasharray="264" stroke-dashoffset="264" />
+              </svg>
+              <div class="absolute flex flex-col items-center justify-center">
+                <span id="scoreValue" class="text-6xl sm:text-7xl font-black text-white drop-shadow-lg tracking-tighter">92</span>
+                <span class="text-xs uppercase font-bold text-slate-400 tracking-widest mt-1">Score</span>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex flex-wrap justify-center items-center gap-2 mb-2">
+              <span id="scoreTag" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">Deep Sleep Optimal</span>
+              <span id="chronotypeBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-950/80 text-indigo-300 border border-indigo-700/50">Bear 🐻</span>
+            </div>
+            <h3 class="text-2xl font-black text-white">Overall Recovery Score</h3>
+            <p class="text-sm text-slate-400 mt-2 max-w-md">Your overall physiological restoration across 5 pillars.</p>
+          </div>
+
+          <!-- Massive Stroke Guard Card -->
+          <div id="strokeSafetyCard" class="p-6 sm:p-8 rounded-3xl bg-night-900/90 border-2 border-emerald-500/40 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+            <span id="strokeStatusBadge" class="px-4 py-1.5 mb-2 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">HEART SAFE - Low Risk</span>
+            <div id="strokeRiskTitle" class="text-2xl sm:text-3xl font-black text-emerald-300 mt-2">Cardiovascular Safe</div>
+            <div id="strokeRiskSub" class="text-sm text-slate-400 mt-2">Stable BP & nocturnal sinus rhythm</div>
+            
+            <div id="strokeRiskPct" class="text-6xl sm:text-7xl font-black font-mono text-emerald-400 drop-shadow-lg my-4">8%</div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Risk Index</span>
+            
+            <button type="button" onclick="App.switchTab('tab-somnisync')" class="px-6 py-3 rounded-xl bg-night-850 hover:bg-slate-800 text-sm font-bold text-teal-300 border border-slate-700 transition flex items-center justify-center gap-2 w-full max-w-xs">
+              <i data-lucide="activity" class="w-4 h-4"></i> Open SomniSync Monitor
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Key Metrics Massive Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Duration -->
+          <div class="glass-card rounded-2xl p-6 flex flex-col justify-center items-center text-center border border-indigo-500/20 hover:border-indigo-500/50">
+            <i data-lucide="clock" class="w-6 h-6 text-indigo-400 mb-2.5"></i>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sleep Duration</span>
+            <div id="statDuration" class="text-3xl font-black text-white mt-1.5 mb-1 tracking-tight">7h 30m</div>
+            <div class="text-xs text-indigo-300 font-semibold mt-1">Efficiency: <span id="statEfficiency" class="font-bold text-white">94%</span></div>
+          </div>
+          <!-- RHR -->
+          <div class="glass-card rounded-2xl p-6 flex flex-col justify-center items-center text-center border border-rose-500/20 hover:border-rose-500/50">
+            <i data-lucide="heart-pulse" class="w-6 h-6 text-rose-400 mb-2.5"></i>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resting / Peak HR</span>
+            <div id="statRHR" class="text-3xl font-black text-white mt-1.5 mb-1 tracking-tight">58 / 66</div>
+            <div id="statRHRLabel" class="text-xs text-emerald-400 font-semibold mt-1">Stable Nocturnal HR</div>
+          </div>
+          <!-- BP -->
+          <div class="glass-card rounded-2xl p-6 flex flex-col justify-center items-center text-center border border-amber-500/20 hover:border-amber-500/50">
+            <i data-lucide="gauge" class="w-6 h-6 text-amber-400 mb-2.5"></i>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Blood Pressure</span>
+            <div id="statBP" class="text-3xl font-black text-white mt-1.5 mb-1 tracking-tight">118/76</div>
+            <div id="statBPLabel" class="text-xs text-emerald-400 font-semibold mt-1">Normal Vascular Tone</div>
+          </div>
+          <!-- Snoring -->
+          <div class="glass-card rounded-2xl p-6 flex flex-col justify-center items-center text-center border border-sky-500/20 hover:border-sky-500/50">
+            <i data-lucide="mic" class="w-6 h-6 text-sky-400 mb-2.5"></i>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peak Snoring (dB)</span>
+            <div id="statSnoring" class="text-3xl font-black text-white mt-1.5 mb-1 tracking-tight">36 dB</div>
+            <div id="statSnoringLabel" class="text-xs text-emerald-400 font-semibold mt-1">Clear Airway (&lt;55 dB)</div>
+          </div>
+        </div>
+
+        <!-- Actionable Insights & Secondary Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 glass-card rounded-2xl p-6 shadow-lg">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-3 border-b border-slate-800 gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="p-2 rounded-lg bg-teal-500/15 text-teal-300"><i data-lucide="sparkles" class="w-5 h-5"></i></span>
+                <h3 class="font-bold text-base text-white">Actionable Insights & Stroke Prevention</h3>
+              </div>
+              <button type="button" onclick="App.switchTab('tab-somnisync')" class="text-xs font-semibold text-teal-400 hover:underline">Simulate Auto-Pilot →</button>
+            </div>
+            <div id="recommendationsList" class="space-y-3"></div>
+          </div>
+
+          <div class="lg:col-span-4 glass-card rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-base text-white mb-4 pb-3 border-b border-slate-800">Supporting Biometrics</h3>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-semibold text-slate-400 flex items-center gap-2"><i data-lucide="scale" class="w-4 h-4 text-teal-400"></i> BMI</span>
+                  <div class="text-right"><div id="statBMI" class="font-bold text-white text-base">22.5</div><div id="statBMILabel" class="text-[10px] text-teal-400">Optimal Range</div></div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-semibold text-slate-400 flex items-center gap-2"><i data-lucide="droplet" class="w-4 h-4 text-sky-400"></i> Hydration</span>
+                  <div class="text-right"><div id="statWater" class="font-bold text-white text-base">2100 ml</div><div id="statWaterLabel" class="text-[10px] text-emerald-400">Optimal</div></div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-semibold text-slate-400 flex items-center gap-2"><i data-lucide="coffee" class="w-4 h-4 text-amber-500"></i> Residual Caffeine</span>
+                  <div class="text-right"><div id="statCaffeineLoad" class="font-bold text-white text-base">0 mg</div><div id="statCaffeineLabel" class="text-[10px] text-emerald-400">Clear</div></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-800/80 space-y-2 text-xs">
+              <div class="bg-night-900/60 px-3 py-2.5 rounded-xl border border-slate-800/70 flex justify-between items-center">
+                <span class="text-[11px] text-slate-400">90m Sleep Cycles</span>
+                <span id="statSleepCycles" class="font-bold text-white">5.0 Cycles</span>
+              </div>
+              <div class="bg-night-900/60 px-3 py-2.5 rounded-xl border border-slate-800/70 flex justify-between items-center">
+                <span class="text-[11px] text-slate-400">Sleep Debt (vs 8h)</span>
+                <span id="statSleepDebt" class="font-bold text-emerald-400">No Debt (0h)</span>
+              </div>
+              <div class="bg-night-900/60 px-3 py-2.5 rounded-xl border border-slate-800/70 flex justify-between items-center">
+                <span class="text-[11px] text-slate-400">CNS Readiness</span>
+                <span id="statCNSStatus" class="font-bold text-emerald-300">92% Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 3: SOMNISYNC LIVE DASHBOARD & NOCTURNAL STROKE SIMULATOR
+                <h3 class="font-bold text-sm text-white">Actionable Insights & Nocturnal Stroke Prevention Solutions</h3>
+              </div>
+              <button type="button" onclick="App.switchTab('tab-somnisync')" class="text-xs font-semibold text-teal-400 hover:underline">Simulate Auto-Pilot →</button>
+            </div>
+            <div id="recommendationsList" class="space-y-2.5"></div>
+          </div>
+
+        </section>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 2: SOMNISYNC LIVE DASHBOARD & NOCTURNAL STROKE SIMULATOR
+         =================================================================== -->
+    <div id="tab-somnisync" class="tab-pane space-y-6">
+
+      <!-- Top Control & Scenario Simulation Bar -->
+      <div id="somniTopBanner" class="glass-card rounded-2xl p-4 sm:p-5 border border-slate-700/80 transition-all duration-500">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div id="somniClockBox" class="px-4 py-2 rounded-xl bg-night-950 border border-slate-700 font-mono text-2xl sm:text-3xl font-extrabold text-teal-300 tracking-wider shadow-inner">
+              10:30 PM
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="somniStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="somniStatusText" class="text-xs sm:text-sm font-extrabold uppercase tracking-wide text-emerald-300">
+                  STEP 1 - SENSE: Contactless biometric sensor system
+                </span>
+              </div>
+              <p id="somniNarrativeSub" class="text-xs text-slate-300 mt-0.5">
+                No wearables. No wires on the body. Hidden sensor layer continuously tracks heart rate, breathing, and mattress temperature.
+              </p>
+            </div>
+          </div>
+
+          <!-- Interactive Storyboard Controls matching the video -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="SomniSync.applyScenario('sense')" class="px-3 py-2 rounded-xl text-xs font-bold bg-night-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 transition flex items-center gap-1.5">
+              <i data-lucide="radio" class="w-3.5 h-3.5"></i> Step 1: Sense (Contactless Biometrics)
+            </button>
+            <button type="button" onclick="SomniSync.applyScenario('distress')" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-950/90 hover:bg-rose-900 text-rose-200 border border-rose-500/50 transition flex items-center gap-1.5 shadow-lg shadow-rose-600/20">
+              <i data-lucide="siren" class="w-3.5 h-3.5 text-rose-400 animate-bounce"></i> 03:00 AM Distress Alarm (128 BPM Spike)
+            </button>
+            <button type="button" onclick="SomniSync.applyScenario('autopilot')" class="px-3 py-2 rounded-xl text-xs font-bold bg-indigo-950/90 hover:bg-indigo-900 text-indigo-200 border border-indigo-400/50 transition flex items-center gap-1.5">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-teal-300"></i> Step 3: Act (Auto-Pilot Cooling & 12° Lift)
+            </button>
+            <button type="button" onclick="SomniSync.applyScenario('morning')" class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 border border-emerald-400/50 transition flex items-center gap-1.5">
+              <i data-lucide="sunrise" class="w-3.5 h-3.5 text-amber-300"></i> Morning Summary (92/100 Heart Safe)
+            </button>
+            <button type="button" onclick="SomniSync.startAutoStory()" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-teal-500 to-indigo-500 text-night-950 hover:opacity-95 transition flex items-center gap-1.5 shadow-lg shadow-teal-500/20">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Auto-Play Full Story
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main SomniSync Interactive Grid: Cross-Section Smart Bed (8 Cols) + Mattress Controls (4 Cols) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left 8 Cols: Interactive Smart Bed Visualizer -->
+        <div id="somniBedStage" class="lg:col-span-8 glass-card rounded-2xl p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between min-h-[390px] border border-slate-800 transition-colors duration-700">
+
+          <!-- 3 Floating Telemetry Readout Boxes -->
+          <div class="grid grid-cols-3 gap-3 relative z-10">
+            <div id="bedCardHr" class="p-3.5 rounded-xl bg-night-950/85 border border-rose-500/40 transition-all">
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> Heart rate
+              </div>
+              <div id="bedLiveHr" class="text-xl sm:text-2xl font-extrabold font-mono text-white mt-0.5">62 bpm</div>
+              <div id="bedLiveHrSub" class="text-[10px] text-emerald-400 font-semibold">Normal sinus rhythm</div>
+            </div>
+
+            <div id="bedCardBpTemp" class="p-3.5 rounded-xl bg-night-950/85 border border-amber-500/40 transition-all">
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span> <span id="bedCardMidTitle">Blood pressure / Temp</span>
+              </div>
+              <div id="bedLiveMidVal" class="text-xl sm:text-2xl font-extrabold font-mono text-amber-300 mt-0.5">26.0 °C</div>
+              <div id="bedLiveMidSub" class="text-[10px] text-slate-400 font-semibold">BP: 118/76 mmHg (Stable)</div>
+            </div>
+
+            <div id="bedCardBreath" class="p-3.5 rounded-xl bg-night-950/85 border border-sky-500/40 transition-all">
+              <div class="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span> Breathing
+              </div>
+              <div id="bedLiveBreath" class="text-xl sm:text-2xl font-extrabold font-mono text-white mt-0.5">14 breaths/min</div>
+              <div id="bedLiveSnoreSub" class="text-[10px] text-indigo-300 font-semibold">Snoring: 36 dB (Safe &lt;55 dB)</div>
+            </div>
+          </div>
+
+          <!-- Interactive SVG Smart Bed Cross-Section -->
+          <div class="my-4 relative flex items-center justify-center select-none">
+            <svg viewBox="0 0 760 230" class="w-full max-w-[700px] h-auto overflow-visible">
+              <defs>
+                <linearGradient id="radarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.05"/>
+                  <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.42"/>
+                </linearGradient>
+                <linearGradient id="blanketGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#25427b"/>
+                  <stop offset="100%" stop-color="#1d3566"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Contactless Radar Sensor Cones (Step 1: Sense) -->
+              <g id="svgRadarCones">
+                <polygon points="220,75 170,152 270,152" fill="url(#radarGrad)" class="sensor-cone" />
+                <polygon points="390,75 330,152 450,152" fill="url(#radarGrad)" class="sensor-cone" style="animation-delay: -0.8s" />
+                <polygon points="540,75 485,152 595,152" fill="url(#radarGrad)" class="sensor-cone" style="animation-delay: -1.5s" />
+                <ellipse cx="390" cy="162" rx="95" ry="18" fill="none" stroke="#14b8a6" stroke-width="1" stroke-opacity="0.35" />
+                <ellipse cx="390" cy="166" rx="145" ry="26" fill="none" stroke="#14b8a6" stroke-width="1" stroke-opacity="0.2" />
+              </g>
+
+              <!-- Heat Waves (Visible when Mattress Temp > 27°C) -->
+              <g id="svgHeatWaves" class="hidden" stroke="#f97316" stroke-width="2.2" fill="none" stroke-linecap="round">
+                <path d="M230,115 Q222,95 234,75 T230,35" class="heat-wave-line" />
+                <path d="M300,115 Q292,95 304,75 T300,35" class="heat-wave-line" style="animation-delay: -0.5s" />
+                <path d="M370,115 Q362,95 374,75 T370,35" class="heat-wave-line" style="animation-delay: -1.1s" />
+                <path d="M440,115 Q432,95 444,75 T440,35" class="heat-wave-line" style="animation-delay: -0.3s" />
+                <path d="M510,115 Q502,95 514,75 T510,35" class="heat-wave-line" style="animation-delay: -0.9s" />
+              </g>
+
+              <!-- Cooling Particles (Visible when AUTO-PILOT Cooling to 19°C is active) -->
+              <g id="svgCoolParticles" class="hidden" fill="#38bdf8">
+                <circle cx="220" cy="85" r="3.5" class="cool-particle" />
+                <circle cx="275" cy="70" r="2.8" class="cool-particle" style="animation-delay: -0.6s" />
+                <circle cx="335" cy="82" r="3.5" class="cool-particle" style="animation-delay: -1.2s" />
+                <circle cx="400" cy="68" r="3" class="cool-particle" style="animation-delay: -0.4s" />
+                <circle cx="465" cy="80" r="3.5" class="cool-particle" style="animation-delay: -1.5s" />
+                <circle cx="525" cy="72" r="2.8" class="cool-particle" style="animation-delay: -0.9s" />
+              </g>
+
+              <!-- Articulated Head-Lift Group (Tilts from 0° to 15° around pivot x=300, y=148) -->
+              <g id="svgHeadLiftGroup" style="transform: rotate(0deg); transform-origin: 300px 148px; transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);">
+                <rect x="132" y="132" width="170" height="16" rx="4" fill="#cbd5e1" />
+                <rect id="svgMattressBandHead" x="132" y="144" width="170" height="7" fill="#0d9488" />
+                <rect x="148" y="116" width="54" height="16" rx="6" fill="#e2e8f0" />
+                <g id="svgSleeperHead">
+                  <circle cx="176" cy="105" r="18" fill="#eac096" />
+                  <path d="M158,105 C158,86 192,86 194,102 C185,95 168,96 158,105 Z" fill="#271c19" />
+                  <path id="svgEyePath" d="M180,103 Q184,106 188,103" stroke="#271c19" stroke-width="2" fill="none" stroke-linecap="round" />
+                  <g id="svgDistressSweat" class="hidden">
+                    <circle cx="168" cy="96" r="2.8" fill="#38bdf8" class="animate-ping" />
+                    <circle cx="195" cy="99" r="2.5" fill="#38bdf8" />
+                  </g>
+                  <text id="svgSnoreText" x="195" y="78" fill="#a855f7" font-size="14" font-weight="800" class="font-mono">Zzz</text>
+                </g>
+                <path d="M192,112 L285,112 L285,132 L192,132 Z" rx="8" fill="#6366f1" />
+              </g>
+
+              <!-- Fixed Lower Mattress Section -->
+              <rect x="298" y="132" width="337" height="16" rx="4" fill="#cbd5e1" />
+              <rect id="svgMattressBandBody" x="298" y="144" width="337" height="7" fill="#0d9488" />
+              <g fill="#99f6e4">
+                <circle cx="165" cy="147.5" r="2.2" /><circle cx="215" cy="147.5" r="2.2" /><circle cx="265" cy="147.5" r="2.2" />
+                <circle cx="325" cy="147.5" r="2.2" /><circle cx="385" cy="147.5" r="2.2" /><circle cx="445" cy="147.5" r="2.2" />
+                <circle cx="505" cy="147.5" r="2.2" /><circle cx="565" cy="147.5" r="2.2" /><circle cx="610" cy="147.5" r="2.2" />
+              </g>
+
+              <!-- Blanket & Bed Frame -->
+              <path d="M235,106 C340,102 520,105 618,116 L618,132 L235,132 Z" fill="url(#blanketGrad)" />
+              <rect x="116" y="68" width="16" height="135" rx="3" fill="#6b4423" />
+              <rect x="116" y="151" width="530" height="16" rx="2" fill="#855832" />
+              <rect x="630" y="138" width="16" height="65" rx="3" fill="#6b4423" />
+
+              <!-- Callout Label: Hidden sensor layer -->
+              <g id="svgSensorCallout">
+                <rect x="455" y="45" width="165" height="28" rx="6" fill="#0f2942" stroke="#14b8a6" stroke-width="1.2" />
+                <text x="537" y="63" fill="#99f6e4" font-size="11" font-weight="700" text-anchor="middle">Hidden sensor layer</text>
+                <line x1="505" y1="73" x2="505" y2="145" stroke="#14b8a6" stroke-width="1.5" />
+                <line x1="565" y1="73" x2="565" y2="145" stroke="#14b8a6" stroke-width="1.5" />
+              </g>
+            </svg>
+
+            <!-- Morning 92/100 Smartphone Summary Card Overlay -->
+            <div id="morningPhoneModal" class="hidden absolute inset-0 bg-night-950/85 backdrop-blur-md z-20 flex items-center justify-center p-4 animate-fadeIn">
+              <div class="bg-[#0c1631] border-2 border-teal-400/60 rounded-3xl p-6 w-64 text-center shadow-[0_0_50px_rgba(20,184,166,0.35)] relative">
+                <button type="button" onclick="document.getElementById('morningPhoneModal').classList.add('hidden')" class="absolute top-3 right-3 text-slate-400 hover:text-white">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <div class="text-xs font-bold text-slate-300 mb-3">SomniSync</div>
+                <div class="relative w-28 h-28 mx-auto flex items-center justify-center mb-3">
+                  <svg class="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="#1e293b" stroke-width="8" fill="none" />
+                    <circle cx="50" cy="50" r="40" stroke="#14b8a6" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="251" stroke-dashoffset="20" />
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="morningModalScore" class="text-3xl font-black text-white">92</span>
+                    <span class="text-[10px] text-slate-400">/ 100</span>
+                  </div>
+                </div>
+                <div class="text-xs font-bold text-white mb-2">Sleep Score: 92/100</div>
+                <div class="py-1 px-3 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-extrabold mb-1.5">Heart safe</div>
+                <div class="py-1 px-3 rounded-full bg-teal-500/15 text-teal-300 text-xs font-extrabold">Deep Sleep optimal</div>
+                <p class="text-[10px] text-slate-400 mt-3">"Protect your sleep. Protect your life."</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Status Bar inside Bed Stage -->
+          <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 font-bold text-[10px] uppercase">Contactless Biometrics</span>
+              <span id="bedActionSummary" class="text-slate-300">Head Elevation: 0° • Mattress Temp: 26.0°C</span>
+            </div>
+            <button type="button" onclick="SomniSync.applyScenario('morning')" class="text-xs font-bold text-teal-400 hover:underline flex items-center gap-1">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> View Morning Summary (92/100 Heart Safe)
+            </button>
+          </div>
+        </div>
+
+        <!-- Right 4 Cols: Smart Mattress Control Panel (Cooling 19°C & Head Lift 12°) -->
+        <div class="lg:col-span-4 space-y-5">
+          <div class="glass-card rounded-2xl p-5 border border-teal-500/25 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div>
+                <h3 class="font-bold text-base text-white">Mattress Control</h3>
+                <p class="text-[11px] text-slate-400">Automated stroke & sleep apnea intervention</p>
+              </div>
+              <label class="inline-flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/40">
+                <input type="checkbox" id="autoPilotToggle" checked class="sr-only peer">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 peer-checked:animate-ping"></span>
+                <span class="text-[10px] font-extrabold text-emerald-300">AUTO-PILOT</span>
+              </label>
+            </div>
+
+            <!-- Control 1: Active Mattress Cooling (Target 19°C) -->
+            <div class="p-4 rounded-xl bg-night-900/90 border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-sm font-bold text-white block">Cooling</span>
+                  <span class="text-[11px] text-slate-400">Target temperature</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="coolingTargetLabel" class="text-lg font-extrabold font-mono text-sky-400">19°C</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="coolingToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                  </label>
+                </div>
+              </div>
+              <input type="range" id="coolingSlider" min="16" max="31" step="0.5" value="26" class="w-full h-1.5 cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>16°C (Deep Cool)</span>
+                <span class="text-sky-400 font-bold">Target: 19°C</span>
+                <span>31°C (Warm)</span>
+              </div>
+            </div>
+
+            <!-- Control 2: Anti-Snoring Head Lift (0° - 15°, Target 12°) -->
+            <div class="p-4 rounded-xl bg-night-900/90 border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-sm font-bold text-white block">Head lift</span>
+                  <span class="text-[11px] text-slate-400">Anti-snoring angle</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="headLiftLabel" class="text-lg font-extrabold font-mono text-teal-300">0°</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="headLiftToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                  </label>
+                </div>
+              </div>
+              <input type="range" id="headLiftSlider" min="0" max="15" step="1" value="0" class="w-full h-1.5 cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>0° (Flat)</span>
+                <span class="text-teal-400 font-bold">Optimal Lift: 12°</span>
+                <span>15° (Max)</span>
+              </div>
+            </div>
+
+            <!-- Medical Explanation Box -->
+            <div class="p-3.5 rounded-xl bg-rose-950/25 border border-rose-500/30 text-xs space-y-1">
+              <div class="font-bold text-rose-300 flex items-center gap-1.5">
+                <i data-lucide="heart-handshake" class="w-4 h-4"></i> SomniSync Stroke Prevention Mechanism:
+              </div>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                When sensors detect a <strong>2:00–3:00 AM heart rate surge</strong> and <strong>snoring above 55 dB</strong> (sleep apnea hypoxia & blood pressure spikes), AUTO-PILOT cools the mattress to <strong>19°C</strong> and elevates the head to <strong>12°</strong>—reducing snoring to 38 dB and stabilizing heart rate to 58 bpm.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: 3 Live SomniSync Telemetry Charts (10 PM - 6 AM) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="glass-card rounded-2xl p-4 border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-300">Heart Rate (10 PM – 6 AM)</span>
+            <span id="chartHrBadge" class="text-sm font-extrabold font-mono text-rose-400">58 bpm</span>
+          </div>
+          <div class="h-40"><canvas id="somniHrChart"></canvas></div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-300">Mattress Temperature</span>
+            <span id="chartTempBadge" class="text-sm font-extrabold font-mono text-amber-400">19.0 °C</span>
+          </div>
+          <div class="h-40"><canvas id="somniTempChart"></canvas></div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 border border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-slate-300">Snoring Level (Threshold 55 dB)</span>
+            <span id="chartSnoreBadge" class="text-sm font-extrabold font-mono text-indigo-400">38 dB</span>
+          </div>
+          <div class="h-40"><canvas id="somniSnoreChart"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===================================================================
+         TAB 3: SLEEP ARCHITECTURE & CRITICAL ANALYSIS
+         =================================================================== -->
+    <div id="tab-analytics" class="tab-pane">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-6 space-y-6">
+          <div class="glass-card rounded-2xl p-6">
+            <h3 class="font-bold text-base text-white mb-1">Sleep Architecture (Hypnogram Distribution)</h3>
+            <p class="text-xs text-slate-400 mb-4">Estimated Awake, Light (N1/N2), Deep (N3) & REM proportions</p>
+
+            <div class="mb-5">
+              <div class="flex justify-between text-xs font-semibold mb-1.5">
+                <span class="text-rose-400" id="stageAwakeText">Awake: 6%</span>
+                <span class="text-sky-400" id="stageLightText">Light: 51%</span>
+                <span class="text-indigo-400" id="stageDeepText">Deep (N3): 22%</span>
+                <span class="text-teal-400" id="stageREMText">REM: 21%</span>
+              </div>
+              <div class="w-full h-4 rounded-full bg-night-900 overflow-hidden flex p-0.5 gap-0.5 border border-slate-700">
+                <div id="barAwake" class="h-full bg-rose-500 rounded-l-full transition-all duration-700" style="width: 6%"></div>
+                <div id="barLight" class="h-full bg-sky-400 transition-all duration-700" style="width: 51%"></div>
+                <div id="barDeep" class="h-full bg-indigo-500 transition-all duration-700" style="width: 22%"></div>
+                <div id="barREM" class="h-full bg-teal-400 rounded-r-full transition-all duration-700" style="width: 21%"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+              <div class="h-48"><canvas id="sleepStageChart"></canvas></div>
+              <div class="space-y-2.5 text-xs">
+                <div class="p-3 rounded-xl bg-night-900 border border-slate-800">
+                  <div class="font-bold text-indigo-300 flex justify-between"><span>Deep Sleep (Slow-Wave N3)</span><span id="stageDeepMins">95 mins</span></div>
+                  <p class="text-[11px] text-slate-400 mt-1">Drives nocturnal blood pressure dipping, vascular repair, and glymphatic brain detoxification.</p>
+                </div>
+                <div class="p-3 rounded-xl bg-night-900 border border-slate-800">
+                  <div class="font-bold text-teal-300 flex justify-between"><span>REM Sleep</span><span id="stageREMMins">90 mins</span></div>
+                  <p class="text-[11px] text-slate-400 mt-1">Consolidates synaptic memory, emotional regulation, and cognitive creativity.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 border border-amber-500/20">
+            <h3 class="font-bold text-base text-white mb-3 flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-5 h-5 text-amber-400"></i> Critical Thinking & Medical Blindspot Warnings
+            </h3>
+            <div id="criticalWarningsContainer" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 space-y-6">
+          <div class="glass-card rounded-2xl p-6">
+            <h3 class="font-bold text-base text-white mb-1">24-Hour Circadian Alertness vs. Adenosine Sleep Drive</h3>
+            <p class="text-xs text-slate-400 mb-4">Models biological alertness waves against homeostatic sleep pressure</p>
+            <div class="h-60"><canvas id="circadianCurveChart"></canvas></div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6">
+            <h3 class="font-bold text-sm text-white mb-4">100-Point Recovery Score Breakdown (5 Pillars)</h3>
+            <div id="scoreBreakdownBars" class="space-y-3 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 4: 90M CYCLES & CHRONOTYPE
+         =================================================================== -->
+    <div id="tab-cycles" class="tab-pane">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-6 glass-card rounded-2xl p-6">
+          <h3 class="font-bold text-base text-white mb-1">Two-Way 90-Minute Sleep Cycle Calculator</h3>
+          <p class="text-xs text-slate-400 mb-4">Waking up at the end of a 90m cycle prevents grogginess (sleep inertia)</p>
+
+          <div class="grid grid-cols-2 gap-2 p-1 bg-night-900 rounded-xl border border-slate-800 mb-4">
+            <button type="button" id="modeWakeUpBtn" class="py-2 px-3 rounded-lg text-xs font-bold bg-indigo-600 text-white">🌅 I want to wake up at...</button>
+            <button type="button" id="modeBedTimeBtn" class="py-2 px-3 rounded-lg text-xs font-bold text-slate-400">🛌 I plan to go to bed at...</button>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between bg-night-900 p-3.5 rounded-xl border border-slate-800">
+              <span class="text-xs font-semibold text-slate-200">Select target time:</span>
+              <input type="time" id="calcTargetTime" value="06:30" class="bg-night-850 border border-teal-500/50 rounded-xl px-3 py-1.5 text-base font-extrabold text-teal-300">
+            </div>
+            <div class="bg-night-900/70 p-3.5 rounded-xl border border-slate-800">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">Sleep Latency (Time to fall asleep):</span>
+                <span id="latencyValueDisplay" class="font-bold text-indigo-300">15 mins</span>
+              </div>
+              <input type="range" id="sleepLatencyRange" min="5" max="45" step="5" value="15" class="w-full">
+            </div>
+            <div class="text-xs text-slate-300 font-medium" id="calcResultHeader">Optimal times (Click a card to apply to Tab 1):</div>
+            <div id="idealBedtimesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 glass-card rounded-2xl p-6">
+          <h3 class="font-bold text-base text-white mb-1">Biological Chronotype Profile</h3>
+          <p class="text-xs text-slate-400 mb-4">Select your circadian archetype to view your ideal biological schedule</p>
+          <div class="grid grid-cols-4 gap-2 mb-4">
+            <button type="button" onclick="App.selectChronotype('lion')" id="chrono-btn-lion" class="chrono-btn p-2.5 rounded-xl bg-night-900 border border-slate-800 text-center">
+              <div class="text-xl">🦁</div><div class="text-xs font-bold mt-1">Lion</div>
+            </button>
+            <button type="button" onclick="App.selectChronotype('bear')" id="chrono-btn-bear" class="chrono-btn p-2.5 rounded-xl bg-teal-950/40 border border-teal-400/70 text-center">
+              <div class="text-xl">🐻</div><div class="text-xs font-bold mt-1">Bear</div>
+            </button>
+            <button type="button" onclick="App.selectChronotype('wolf')" id="chrono-btn-wolf" class="chrono-btn p-2.5 rounded-xl bg-night-900 border border-slate-800 text-center">
+              <div class="text-xl">🐺</div><div class="text-xs font-bold mt-1">Wolf</div>
+            </button>
+            <button type="button" onclick="App.selectChronotype('dolphin')" id="chrono-btn-dolphin" class="chrono-btn p-2.5 rounded-xl bg-night-900 border border-slate-800 text-center">
+              <div class="text-xl">🐬</div><div class="text-xs font-bold mt-1">Dolphin</div>
+            </button>
+          </div>
+          <div id="chronotypeDetailBox" class="p-4 rounded-xl bg-night-900 border border-slate-800 space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 5: BREATHWORK & SOUNDSCAPE
+         =================================================================== -->
+    <div id="tab-relax" class="tab-pane">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Breathing Coach (5 Cols) -->
+        <div class="lg:col-span-5 glass-highlight rounded-2xl p-6 text-center">
+          <h3 class="font-bold text-base text-white text-left mb-1">Biometric Breathing Coach</h3>
+          <p class="text-xs text-slate-400 text-left mb-4">Stimulate the vagus nerve to lower heart rate & nocturnal blood pressure</p>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <button type="button" data-mode="478" class="breath-mode-btn py-1.5 px-2 rounded-xl text-xs font-bold bg-teal-950 text-teal-300 border border-teal-500/50">4-7-8 Sleep Breath</button>
+            <button type="button" data-mode="box" class="breath-mode-btn py-1.5 px-2 rounded-xl text-xs font-bold bg-night-900 text-slate-400 border border-slate-800">Box 4-4-4-4</button>
+            <button type="button" data-mode="coherent" class="breath-mode-btn py-1.5 px-2 rounded-xl text-xs font-bold bg-night-900 text-slate-400 border border-slate-800">Coherent HRV 5.5s</button>
+          </div>
+          <div class="my-5 relative h-48 flex items-center justify-center">
+            <div id="breathOuterRing" class="w-32 h-32 rounded-full bg-teal-500/10 border border-teal-400/20 absolute breath-circle-transition"></div>
+            <div id="breathMainCircle" class="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-600/50 to-teal-400/50 border-2 border-teal-300/60 flex flex-col items-center justify-center breath-circle-transition z-10">
+              <span id="breathPhaseText" class="text-xs font-extrabold text-white">Ready</span>
+              <span id="breathTimerText" class="text-2xl font-black text-teal-200">--</span>
+            </div>
+          </div>
+          <p id="breathInstruction" class="text-xs text-slate-300 mb-4">Inhale through nose for 4s — Hold for 7s — Exhale slowly through mouth for 8s.</p>
+          <button id="btnToggleBreathing" type="button" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-indigo-500 text-night-950 text-xs font-extrabold">Start Breathing Session</button>
+        </div>
+
+        <!-- Web Audio Synthesizer & Sleep Hygiene Checklist (7 Cols) -->
+        <div class="lg:col-span-7 space-y-5">
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+              <div>
+                <h3 class="font-bold text-base text-white">Web Audio API Soundscape Synthesizer</h3>
+                <p class="text-xs text-slate-400">Real-time procedural noise & Delta binaural beats generated directly in your browser</p>
+              </div>
+              <button id="btnMasterAudioToggle" type="button" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5">
+                <i data-lucide="volume-2" class="w-4 h-4"></i><span>Enable Soundscape</span>
+              </button>
+            </div>
+            <div class="space-y-3 text-xs">
+              <div class="p-3.5 rounded-xl bg-night-900 border border-slate-800 flex items-center gap-4">
+                <span class="w-48 font-bold text-sky-300">🌧️ Pink Noise (Night Rain)</span>
+                <input type="range" id="volPinkNoise" min="0" max="100" value="35" class="w-full">
+                <span id="valPinkNoise" class="w-10 text-right font-bold">35%</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-night-900 border border-slate-800 flex items-center gap-4">
+                <span class="w-48 font-bold text-amber-300">🌊 Brown Noise (Deep Waves)</span>
+                <input type="range" id="volBrownNoise" min="0" max="100" value="25" class="w-full">
+                <span id="valBrownNoise" class="w-10 text-right font-bold">25%</span>
+              </div>
+              <div class="p-3.5 rounded-xl bg-night-900 border border-slate-800 flex items-center gap-4">
+                <span class="w-48 font-bold text-purple-300">🧠 Delta 2.5Hz (Binaural Beats)</span>
+                <input type="range" id="volBinaural" min="0" max="100" value="20" class="w-full">
+                <span id="valBinaural" class="w-10 text-right font-bold">20%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+              <h3 class="font-bold text-sm text-white">Pre-Bedtime Sleep Hygiene Checklist</h3>
+              <span id="hygieneProgressText" class="text-xs font-bold text-teal-300">0/4 Completed</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+              <label class="flex items-center gap-2.5 p-3 rounded-xl bg-night-900 border border-slate-800 cursor-pointer">
+                <input type="checkbox" class="hygiene-check w-4 h-4 rounded accent-teal-500">
+                <span>No blue light screens 45-60m before bed</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-3 rounded-xl bg-night-900 border border-slate-800 cursor-pointer">
+                <input type="checkbox" class="hygiene-check w-4 h-4 rounded accent-teal-500">
+                <span>Cool bedroom / mattress (19°C – 22°C)</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-3 rounded-xl bg-night-900 border border-slate-800 cursor-pointer">
+                <input type="checkbox" class="hygiene-check w-4 h-4 rounded accent-teal-500">
+                <span>No heavy meals within 3 hours of sleep</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-3 rounded-xl bg-night-900 border border-slate-800 cursor-pointer">
+                <input type="checkbox" class="hygiene-check w-4 h-4 rounded accent-teal-500">
+                <span>12° head elevation if prone to snoring</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         TAB 6: HISTORY & TRENDS
+         =================================================================== -->
+    <div id="tab-history" class="tab-pane space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-4 glass-card rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <span class="text-xs text-slate-400 font-medium block">Optimal Recovery Streak (&ge;75 pts)</span>
+            <div class="text-3xl font-extrabold text-teal-300 mt-1" id="streakCountText">3 Days 🔥</div>
+            <span class="text-[11px] text-slate-400 mt-1 block" id="avgScore7DaysText">Avg Score: 82/100</span>
+          </div>
+          <div id="heatmapBadges" class="flex items-center gap-1.5"></div>
+        </div>
+
+        <div class="lg:col-span-8 glass-card rounded-2xl p-5">
+          <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-800">
+            <h3 class="font-bold text-sm text-white">Multi-Axis Trend: Recovery Score, Sleep Hours & Peak Night HR</h3>
+            <span class="text-xs text-slate-400">Real-Time Correlation</span>
+          </div>
+          <div class="h-56"><canvas id="sleepTrendChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3">
+          <div>
+            <h3 class="font-bold text-base text-white">Biometric & Sleep History Log</h3>
+            <p class="text-xs text-slate-400">Stored locally in your browser — Click any row to load its full analysis</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="filterScoreSelect" class="bg-night-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-300">
+              <option value="all">All Score Levels</option>
+              <option value="high">Optimal Recovery (&ge;80)</option>
+              <option value="medium">Moderate (60 – 79)</option>
+              <option value="low">High Risk / Poor (&lt;60)</option>
+            </select>
+            <button id="btnExportCSV" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-night-900 border border-slate-700 hover:bg-slate-800 text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-night-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Bedtime → Wake</th>
+                <th class="py-3 px-4">Duration</th>
+                <th class="py-3 px-4">Recovery Score</th>
+                <th class="py-3 px-4">RHR / Peak HR</th>
+                <th class="py-3 px-4">BP / Snoring</th>
+                <th class="py-3 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Confirm Clear -->
+    <div id="confirmModal" class="fixed inset-0 bg-night-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+      <div class="bg-night-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5">
+        <h4 class="font-bold text-sm text-white mb-2">Clear All Biometric History?</h4>
+        <p class="text-xs text-slate-300 mb-4">All locally stored sleep and cardiovascular records will be permanently removed.</p>
+        <div class="flex justify-end gap-2">
+          <button id="btnCancelClear" class="px-3 py-1.5 text-xs rounded-lg bg-slate-800 text-slate-300">Cancel</button>
+          <button id="btnConfirmClear" class="px-3 py-1.5 text-xs rounded-lg bg-rose-600 text-white font-bold">Clear All</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       MODULAR JAVASCRIPT ARCHITECTURE (100% ENGLISH)
+       ===================================================================== -->
+  <script>
+    const STORAGE_KEY = 'somnisync_en_v5';
+    const $ = (id) => document.getElementById(id);
+
+    /* =====================================================================
+       MODULE 1: CORE APP & 7-DAY SAMPLE RECORDS
+       ===================================================================== */
+    const sampleRecords = [
+      { id: 'r1', date: '2026-10-23', bedTime: '23:30', wakeTime: '06:15', awakenings: 2, perceivedQuality: 3, rhr: 63, peakHr: 88, sysBp: 128, diaBp: 82, snoringDb: 48, breathingPattern: 'mild', mattressTemp: 27.5, soreness: 3, height: 172, weight: 67, waterIntake: 1750, exerciseTime: 20, caffeineIntake: true, lastCaffeineTime: '17:00', durationMinutes: 375, efficiency: 86, score: 71 },
+      { id: 'r2', date: '2026-10-24', bedTime: '23:15', wakeTime: '06:30', awakenings: 1, perceivedQuality: 4, rhr: 59, peakHr: 72, sysBp: 120, diaBp: 78, snoringDb: 40, breathingPattern: 'normal', mattressTemp: 24.0, soreness: 2, height: 172, weight: 66.8, waterIntake: 2050, exerciseTime: 30, caffeineIntake: false, lastCaffeineTime: '14:00', durationMinutes: 420, efficiency: 92, score: 82 },
+      { id: 'r3', date: '2026-10-25', bedTime: '23:00', wakeTime: '06:40', awakenings: 0, perceivedQuality: 5, rhr: 57, peakHr: 65, sysBp: 118, diaBp: 75, snoringDb: 36, breathingPattern: 'normal', mattressTemp: 21.0, soreness: 1, height: 172, weight: 66.5, waterIntake: 2250, exerciseTime: 40, caffeineIntake: false, lastCaffeineTime: '13:30', durationMinutes: 460, efficiency: 96, score: 91 },
+      { id: 'r4', date: '2026-10-26', bedTime: '00:15', wakeTime: '06:00', awakenings: 3, perceivedQuality: 2, rhr: 68, peakHr: 128, sysBp: 158, diaBp: 98, snoringDb: 63, breathingPattern: 'irregular', mattressTemp: 30.8, soreness: 4, height: 172, weight: 67.0, waterIntake: 1400, exerciseTime: 0, caffeineIntake: true, lastCaffeineTime: '18:30', durationMinutes: 300, efficiency: 75, score: 49 },
+      { id: 'r5', date: '2026-10-27', bedTime: '22:50', wakeTime: '06:30', awakenings: 0, perceivedQuality: 5, rhr: 56, peakHr: 64, sysBp: 116, diaBp: 74, snoringDb: 35, breathingPattern: 'normal', mattressTemp: 19.5, soreness: 1, height: 172, weight: 66.3, waterIntake: 2300, exerciseTime: 45, caffeineIntake: false, lastCaffeineTime: '13:00', durationMinutes: 460, efficiency: 97, score: 94 },
+      { id: 'r6', date: '2026-10-28', bedTime: '23:00', wakeTime: '06:30', awakenings: 1, perceivedQuality: 4, rhr: 58, peakHr: 66, sysBp: 118, diaBp: 76, snoringDb: 38, breathingPattern: 'normal', mattressTemp: 19.0, soreness: 2, height: 172, weight: 66.1, waterIntake: 2150, exerciseTime: 35, caffeineIntake: false, lastCaffeineTime: '14:00', durationMinutes: 435, efficiency: 94, score: 88 },
+      { id: 'r7', date: '2026-10-29', bedTime: '22:45', wakeTime: '06:30', awakenings: 0, perceivedQuality: 5, rhr: 55, peakHr: 62, sysBp: 115, diaBp: 74, snoringDb: 34, breathingPattern: 'normal', mattressTemp: 19.0, soreness: 1, height: 172, weight: 66.0, waterIntake: 2350, exerciseTime: 45, caffeineIntake: false, lastCaffeineTime: '13:30', durationMinutes: 465, efficiency: 98, score: 95 }
+    ];
+
+    const App = {
+      charts: {},
+      getRecords() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+      },
+      saveRecords(list) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch {}
+      },
+      toast(msg, type = 'info') {
+        const colors = {
+          success: 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200',
+          warning: 'bg-amber-950/95 border-amber-500/60 text-amber-200',
+          error: 'bg-rose-950/95 border-rose-500/70 text-rose-200',
+          info: 'bg-indigo-950/95 border-indigo-500/60 text-indigo-200'
+        };
+        const el = document.createElement('div');
+        el.className = `px-4 py-2.5 rounded-xl border backdrop-blur-md shadow-xl text-xs font-semibold transition-all duration-300 pointer-events-auto ${colors[type] || colors.info}`;
+        el.innerHTML = msg;
+        $('toastContainer').appendChild(el);
+        setTimeout(() => { el.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => el.remove(), 300); }, 3400);
+      },
+      switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+        $(tabId)?.classList.add('active');
+        setTimeout(() => Object.values(this.charts).forEach(c => c?.resize()), 60);
+      },
+      triggerFireworks() {
+        if (typeof confetti !== 'function') return;
+        confetti({ particleCount: 75, spread: 85, origin: { y: 0.6 }, colors: ['#14b8a6', '#6366f1', '#34d399', '#fbbf24'] });
+      }
+    };
+
+    /* =====================================================================
+       MODULE 2: METRICS & NOCTURNAL STROKE RISK ENGINE
+       ===================================================================== */
+    const MetricsEngine = {
+      diffMins(t1, t2) {
+        const [h1, m1] = t1.split(':').map(Number);
+        const [h2, m2] = t2.split(':').map(Number);
+        let d = (h2 * 60 + m2) - (h1 * 60 + m1);
+        return d <= 0 ? d + 1440 : d;
+      },
+      compute(d) {
+        const inBed = this.diffMins(d.bedTime, d.wakeTime);
+        const awakeMins = (d.awakenings || 0) * 15 + 15;
+        const sleepMins = Math.max(60, inBed - (d.awakenings || 0) * 15);
+        const efficiency = Math.min(99, Math.max(45, Math.round(((inBed - awakeMins) / inBed) * 100)));
+
+        const rhr = d.rhr || 58;
+        const peakHr = d.peakHr || 66;
+        const sysBp = d.sysBp || 118;
+        const diaBp = d.diaBp || 76;
+        const snoringDb = d.snoringDb || 36;
+        const breathing = d.breathingPattern || 'normal';
+        const temp = d.mattressTemp || 24;
+        const soreness = d.soreness || 2;
+
+        // Caffeine half-life (5.5h)
+        let cafMg = 0;
+        if (d.caffeineIntake) {
+          const hrs = Math.max(0.5, this.diffMins(d.lastCaffeineTime || '16:30', d.bedTime) / 60);
+          cafMg = Math.round(120 * Math.pow(0.5, hrs / 5.5));
+        }
+
+        // 5-Pillar Sleep Score
+        const hrs = sleepMins / 60;
+        const durationScore = hrs < 7 ? Math.max(12, Math.round(40 - (7 - hrs) * 11)) : hrs > 9.2 ? 32 : 40;
+        const continuityScore = Math.max(6, 25 - (d.awakenings * 5) - (snoringDb > 55 ? 5 : 0));
+        const feelingScore = Math.round((d.perceivedQuality / 5) * 15);
+        const cnsScore = Math.max(2, 10 - (rhr > 65 ? 3 : 0) - (peakHr >= 100 ? 4 : 0) - (soreness >= 4 ? 3 : 0));
+        const lifestyleScore = Math.min(10, Math.max(1, 8 - (d.caffeineIntake ? 4 : 0) + (d.exerciseTime >= 25 ? 2 : 0)));
+        const score = Math.min(100, Math.max(20, durationScore + continuityScore + feelingScore + cnsScore + lifestyleScore));
+
+        // Nocturnal Stroke & Cardiovascular Distress Risk Index (0 - 100%)
+        let strokeRisk = 8;
+        if (peakHr >= 115) strokeRisk += 36;
+        else if (peakHr >= 100) strokeRisk += 22;
+        if (sysBp >= 140 || diaBp >= 90) strokeRisk += 26;
+        else if (sysBp >= 130 || diaBp >= 85) strokeRisk += 14;
+        if (snoringDb >= 55 || breathing === 'irregular') strokeRisk += 22;
+        if (hrs < 6) strokeRisk += 12;
+        if (temp >= 29) strokeRisk += 8;
+        strokeRisk = Math.min(96, Math.max(5, strokeRisk));
+
+        const strokeLevel = (strokeRisk >= 52 || peakHr >= 100 || snoringDb > 55 || sysBp >= 140 || diaBp >= 90)
+          ? 'HIGH'
+          : strokeRisk >= 26
+          ? 'MODERATE'
+          : 'SAFE';
+
+        // Sleep Architecture %
+        const awakePct = Math.min(25, Math.max(4, Math.round((awakeMins / inBed) * 100)));
+        const deepPct = Math.max(10, 22 - (d.caffeineIntake ? 5 : 0) - (snoringDb >= 55 ? 5 : 0) + (temp <= 21 ? 3 : 0));
+        const remPct = Math.max(12, 22 - (d.awakenings >= 2 ? 4 : 0));
+        const lightPct = 100 - awakePct - deepPct - remPct;
+
+        const bmi = +(d.weight / Math.pow(d.height / 100, 2)).toFixed(1);
+        const recommendedWater = Math.round(d.weight * 35 + (d.exerciseTime / 30) * 350);
+        const sleepCycles = +(sleepMins / 90).toFixed(1);
+        const sleepDebtMinutes = 480 - sleepMins;
+        const cnsReadiness = Math.min(99, Math.max(38, Math.round(score * 0.65 + cnsScore * 3.5)));
+
+        const [bedH] = d.bedTime.split(':').map(Number);
+        let chronotype = 'Bear 🐻';
+        if (bedH >= 20 && bedH <= 22) chronotype = 'Lion 🦁';
+        else if (bedH >= 0 && bedH <= 5) chronotype = 'Wolf 🐺';
+        else if (d.awakenings >= 3) chronotype = 'Dolphin 🐬';
+
+        return {
+          inBed, sleepMins, efficiency, score, strokeRisk, strokeLevel, chronotype,
+          bmi, recommendedWater, sleepCycles, sleepDebtMinutes, cafMg, cnsReadiness,
+          breakdown: { durationScore, continuityScore, feelingScore, cnsScore, lifestyleScore },
+          stages: { awakePct, lightPct, deepPct, remPct }
+        };
+      }
+    };
+
+    /* =====================================================================
+       MODULE 3: 3D HOLOGRAPHIC BIOMETRIC AVATAR (THREE.JS)
+       ===================================================================== */
+    const Avatar3D = {
+      autoRotate: true,
+      wireframe: false,
+      composition: 'standard',
+      target: { heightCm: 170, weightKg: 65, rhr: 58, peakHr: 66, strokeLevel: 'SAFE', soreness: 2 },
+      curr: { h: 1, cx: 1, cz: 1, wx: 1, bz: 1, bo: 0, hx: 1, limb: 1 },
+      parts: {},
+      mats: {},
+
+      init() {
+        const box = $('avatar3DContainer');
+        if (!box || typeof THREE === 'undefined') return;
+        const w = box.clientWidth || 340, h = box.clientHeight || 256;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(36, w / h, 0.1, 100);
+        camera.position.set(0, 1.32, 4.9);
+        camera.lookAt(0, 1.15, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        box.innerHTML = '';
+        box.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xcbd5e1, 0.8));
+        const keyLight = new THREE.DirectionalLight(0x2dd4bf, 1.35);
+        keyLight.position.set(3, 5, 4);
+        scene.add(keyLight);
+
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+        const glowRing = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.06, 40), ringMat);
+        glowRing.rotation.x = -Math.PI / 2;
+        scene.add(glowRing);
+
+        const laserMat = new THREE.MeshBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity: 0.55 });
+        const laser = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.011, 10, 40), laserMat);
+        laser.rotation.x = Math.PI / 2;
+        scene.add(laser);
+
+        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x14b8a6, emissive: 0x0f766e, emissiveIntensity: 0.35, shininess: 65, transparent: true, opacity: 0.86 });
+        const jointMat = new THREE.MeshPhongMaterial({ color: 0x6366f1, emissive: 0x312e81, emissiveIntensity: 0.45, transparent: true, opacity: 0.9 });
+        const heartMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+        const brainMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
+
+        const root = new THREE.Group();
+        scene.add(root);
+        const seg = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); root.add(m); return m; };
+
+        const lCalf = seg(new THREE.CylinderGeometry(0.08, 0.056, 0.46, 18), bodyMat, -0.17, 0.27, 0);
+        const rCalf = seg(new THREE.CylinderGeometry(0.08, 0.056, 0.46, 18), bodyMat, 0.17, 0.27, 0);
+        seg(new THREE.BoxGeometry(0.11, 0.06, 0.22), jointMat, -0.17, 0.03, 0.03);
+        seg(new THREE.BoxGeometry(0.11, 0.06, 0.22), jointMat, 0.17, 0.03, 0.03);
+        const lThigh = seg(new THREE.CylinderGeometry(0.12, 0.085, 0.48, 20), bodyMat, -0.175, 0.75, 0);
+        const rThigh = seg(new THREE.CylinderGeometry(0.12, 0.085, 0.48, 20), bodyMat, 0.175, 0.75, 0);
+        const pelvis = seg(new THREE.CylinderGeometry(0.24, 0.22, 0.2, 22), bodyMat, 0, 1.02, 0);
+        const waist = seg(new THREE.CylinderGeometry(0.24, 0.24, 0.3, 24), bodyMat, 0, 1.24, 0);
+        const belly = seg(new THREE.SphereGeometry(0.235, 24, 20), bodyMat, 0, 1.22, 0.02);
+        const chest = seg(new THREE.CylinderGeometry(0.29, 0.24, 0.34, 24), bodyMat, 0, 1.54, 0);
+        const heart = seg(new THREE.SphereGeometry(0.072, 18, 18), heartMat, 0.04, 1.55, 0.14);
+        const lShoulder = seg(new THREE.SphereGeometry(0.1, 16, 16), jointMat, -0.35, 1.66, 0);
+        const rShoulder = seg(new THREE.SphereGeometry(0.1, 16, 16), jointMat, 0.35, 1.66, 0);
+        const lArm = seg(new THREE.CylinderGeometry(0.076, 0.056, 0.62, 16), bodyMat, -0.39, 1.32, 0);
+        const rArm = seg(new THREE.CylinderGeometry(0.076, 0.056, 0.62, 16), bodyMat, 0.39, 1.32, 0);
+        seg(new THREE.CylinderGeometry(0.074, 0.086, 0.12, 16), jointMat, 0, 1.76, 0);
+        const head = seg(new THREE.SphereGeometry(0.162, 22, 22), bodyMat, 0, 1.96, 0);
+        const brain = seg(new THREE.SphereGeometry(0.095, 16, 16), brainMat, 0, 1.99, 0.02);
+
+        this.parts = { root, lCalf, rCalf, lThigh, rThigh, pelvis, waist, belly, chest, heart, lShoulder, rShoulder, lArm, rArm, head, brain, laser };
+        this.mats = { bodyMat, jointMat, heartMat, brainMat, ringMat, laserMat };
+
+        let drag = false, px = 0;
+        box.addEventListener('mousedown', e => { drag = true; px = e.clientX; });
+        window.addEventListener('mousemove', e => { if (drag) { root.rotation.y += (e.clientX - px) * 0.012; px = e.clientX; } });
+        window.addEventListener('mouseup', () => drag = false);
+        box.addEventListener('touchstart', e => { if (e.touches[0]) { drag = true; px = e.touches[0].clientX; } }, { passive: true });
+        box.addEventListener('touchmove', e => { if (drag && e.touches[0]) { root.rotation.y += (e.touches[0].clientX - px) * 0.012; px = e.touches[0].clientX; } }, { passive: true });
+        box.addEventListener('touchend', () => drag = false);
+
+        const clock = new THREE.Clock();
+        const animate = () => {
+          requestAnimationFrame(animate);
+          const t = clock.getElapsedTime();
+          const c = this.curr, tg = this.target, p = this.parts;
+
+          const hScale = Math.max(0.75, Math.min(1.26, tg.heightCm / 170));
+          c.h += (hScale - c.h) * 0.12;
+          p.root.scale.y = c.h;
+
+          const bmi = tg.weightKg / Math.pow(tg.heightCm / 100, 2);
+          const d = Math.max(-0.4, Math.min(1.4, (bmi - 21.5) / 14));
+          const ath = this.composition === 'athletic';
+
+          c.cx += ((ath ? 1.06 + Math.max(0, d * 0.6) : 1 + d * 0.45) - c.cx) * 0.12;
+          c.cz += ((ath ? 1.04 + Math.max(0, d * 0.4) : 1 + d * 0.52) - c.cz) * 0.12;
+          c.wx += ((ath ? 0.92 + Math.max(-0.15, d * 0.22) : 1 + d * 0.85) - c.wx) * 0.12;
+          c.bz += ((ath ? 0.88 + Math.max(-0.12, d * 0.2) : 1 + Math.max(-0.25, d * 1.25)) - c.bz) * 0.12;
+          c.bo += ((ath ? 0.01 : Math.max(-0.02, d * 0.11)) - c.bo) * 0.12;
+          c.hx += ((ath ? 0.98 + d * 0.3 : 1 + d * 0.65) - c.hx) * 0.12;
+          c.limb += ((ath ? 1.05 + d * 0.45 : 1 + d * 0.55) - c.limb) * 0.12;
+
+          p.chest.scale.set(c.cx, 1, c.cz);
+          p.waist.scale.set(c.wx, 1, c.bz * 0.9);
+          p.belly.scale.set(c.wx * 1.04, 1.02, c.bz * 1.08);
+          p.belly.position.z = 0.02 + c.bo;
+          p.pelvis.scale.set(c.hx, 1, c.hx * 0.95);
+
+          const span = 0.34 * Math.max(0.92, c.cx * 0.95);
+          p.lShoulder.position.x = -span; p.rShoulder.position.x = span;
+          p.lArm.position.x = -(span + 0.04); p.rArm.position.x = span + 0.04;
+          p.lArm.scale.set(c.limb * 0.92, 1, c.limb * 0.92);
+          p.rArm.scale.set(c.limb * 0.92, 1, c.limb * 0.92);
+          p.lThigh.scale.set(c.limb, 1, c.limb); p.rThigh.scale.set(c.limb, 1, c.limb);
+          p.lCalf.scale.set(c.limb * 0.9, 1, c.limb * 0.9); p.rCalf.scale.set(c.limb * 0.9, 1, c.limb * 0.9);
+
+          const activeBpm = tg.strokeLevel === 'HIGH' ? Math.max(tg.rhr, tg.peakHr) : tg.rhr;
+          const pulse = 1 + 0.28 * Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * (activeBpm / 60))), 4);
+          p.heart.scale.set(pulse, pulse, pulse);
+          p.heart.position.z = 0.14 * c.cz;
+          if (tg.strokeLevel === 'HIGH') {
+            p.brain.scale.set(pulse * 1.1, pulse * 1.1, pulse * 1.1);
+          } else {
+            p.brain.scale.set(1, 1, 1);
+          }
+
+          p.laser.position.y = (Math.sin(t * 1.4) * 0.5 + 0.5) * 2.04 * c.h;
+          if (this.autoRotate && !drag) p.root.rotation.y += 0.0065;
+          renderer.render(scene, camera);
+        };
+        animate();
+      },
+
+      syncFromInputs() {
+        const heightCm = parseFloat($('height')?.value) || 170;
+        const weightKg = parseFloat($('weight')?.value) || 65;
+        const rhr = parseInt($('rhr')?.value, 10) || 58;
+        const peakHr = parseInt($('peakHr')?.value, 10) || 66;
+        const sysBp = parseInt($('sysBp')?.value, 10) || 118;
+        const snoringDb = parseInt($('snoringDb')?.value, 10) || 36;
+        const soreness = parseInt($('soreness')?.value, 10) || 2;
+
+        const isHighStroke = peakHr >= 100 || sysBp >= 140 || snoringDb > 55;
+        const strokeLevel = isHighStroke ? 'HIGH' : (peakHr >= 90 || sysBp >= 130) ? 'MODERATE' : 'SAFE';
+        this.target = { heightCm, weightKg, rhr, peakHr, strokeLevel, soreness };
+
+        const bmi = +(weightKg / Math.pow(heightCm / 100, 2)).toFixed(1);
+        const bmr = Math.round(10 * weightKg + 6.25 * heightCm - 135);
+        const whtr = Math.max(0.36, Math.min(0.68, +(0.34 + (bmi - 18.5) * 0.014 - (this.composition === 'athletic' ? 0.04 : 0)).toFixed(2)));
+
+        $('hudBmiText').innerText = `BMI: ${bmi}`;
+        $('hudBmrText').innerText = `🔥 BMR: ~${bmr} kcal • WHtR: ${whtr}`;
+        $('hudRhrLive').innerText = isHighStroke ? `⚠️ SPIKE ${peakHr} BPM` : `${rhr} BPM`;
+        $('hudDimText').innerText = `${heightCm} cm • ${weightKg.toFixed(1)} kg`;
+        $('hudHeightMarker').style.bottom = `${Math.max(4, Math.min(94, ((heightCm - 130) / 80) * 100))}%`;
+        $('hudHeightMarker').innerText = `${heightCm}cm`;
+
+        let cat = 'Optimal', hex = 0x14b8a6, em = 0x0f766e;
+        if (bmi < 18.5) { cat = 'Underweight'; hex = 0x38bdf8; em = 0x0369a1; }
+        else if (bmi > 23 && bmi <= 24.9) {
+          cat = this.composition === 'athletic' ? 'Lean Athletic' : 'Mild Overweight';
+          hex = this.composition === 'athletic' ? 0x818cf8 : 0xf59e0b;
+          em = this.composition === 'athletic' ? 0x4338ca : 0xb45309;
+        } else if (bmi >= 25) {
+          cat = this.composition === 'athletic' && bmi < 28.5 ? 'Muscular Athlete' : 'Overweight / Obese';
+          hex = this.composition === 'athletic' && bmi < 28.5 ? 0xa855f7 : 0xf43f5e;
+          em = this.composition === 'athletic' && bmi < 28.5 ? 0x6b21a8 : 0xbe123c;
+        }
+        $('hudCategoryText').innerText = cat;
+
+        if (this.mats.bodyMat) {
+          this.mats.bodyMat.color.setHex(hex);
+          this.mats.bodyMat.emissive.setHex(em);
+          this.mats.brainMat.color.setHex(isHighStroke ? 0xf43f5e : 0x38bdf8);
+        }
+      }
+    };
+
+    /* =====================================================================
+       MODULE 4: SOMNISYNC SMART MATTRESS & STROKE ALARM CONTROLLER (TAB 2)
+       ===================================================================== */
+    const SomniSync = {
+      storyTimers: [],
+      audioCtx: null,
+      hours: ['10 PM', '11 PM', '12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM'],
+
+      init() {
+        this.renderCharts('sense');
+
+        $('coolingToggle')?.addEventListener('change', (e) => {
+          const on = e.target.checked;
+          const targetTemp = on ? 19.0 : 26.0;
+          $('coolingSlider').value = targetTemp;
+          this.updateBedVisuals({ temp: targetTemp, coolingOn: on });
+        });
+        $('coolingSlider')?.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          $('coolingToggle').checked = val <= 21;
+          this.updateBedVisuals({ temp: val, coolingOn: val <= 21 });
+        });
+        $('headLiftToggle')?.addEventListener('change', (e) => {
+          const angle = e.target.checked ? 12 : 0;
+          $('headLiftSlider').value = angle;
+          this.updateBedVisuals({ angle });
+        });
+        $('headLiftSlider')?.addEventListener('input', (e) => {
+          const angle = parseInt(e.target.value, 10);
+          $('headLiftToggle').checked = angle >= 6;
+          this.updateBedVisuals({ angle });
+        });
+      },
+
+      playAlarmBeep() {
+        try {
+          if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+          [0, 0.22, 0.44].forEach(delay => {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.08, this.audioCtx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + delay + 0.16);
+            osc.connect(gain).connect(this.audioCtx.destination);
+            osc.start(this.audioCtx.currentTime + delay);
+            osc.stop(this.audioCtx.currentTime + delay + 0.17);
+          });
+        } catch {}
+      },
+
+      clearStory() {
+        this.storyTimers.forEach(t => clearTimeout(t));
+        this.storyTimers = [];
+      },
+
+      updateBedVisuals({ hr, bpText, temp, breathText, snoreDb, angle, coolingOn, distress }) {
+        if (angle !== undefined) {
+          $('svgHeadLiftGroup').style.transform = `rotate(${angle}deg)`;
+          $('headLiftLabel').innerText = `${angle}°`;
+          if (snoreDb === undefined) {
+            snoreDb = Math.max(34, Math.round(62 - angle * 2));
+          }
+        }
+        if (temp !== undefined) {
+          $('coolingTargetLabel').innerText = `${temp.toFixed(1)}°C`;
+          $('bedLiveMidVal').innerText = distress ? 'Rising' : `${temp.toFixed(1)} °C`;
+          $('chartTempBadge').innerText = `${temp.toFixed(1)} °C`;
+          $('svgHeatWaves').classList.toggle('hidden', temp < 27.5);
+          $('svgCoolParticles').classList.toggle('hidden', !coolingOn && temp > 21);
+        }
+        if (hr !== undefined) {
+          $('bedLiveHr').innerText = `${hr} bpm`;
+          $('chartHrBadge').innerText = `${hr} bpm`;
+          $('bedLiveHr').className = `text-xl sm:text-2xl font-extrabold font-mono mt-0.5 ${hr >= 100 ? 'text-rose-400 animate-pulse' : 'text-white'}`;
+        }
+        if (bpText) $('bedLiveMidSub').innerText = bpText;
+        if (breathText) $('bedLiveBreath').innerText = breathText;
+        if (snoreDb !== undefined) {
+          $('bedLiveSnoreSub').innerText = `Snoring: ${snoreDb} dB (${snoreDb >= 55 ? '⚠️ Above 55 dB threshold' : 'Safe <55 dB'})`;
+          $('chartSnoreBadge').innerText = `${snoreDb} dB`;
+          $('svgSnoreText').textContent = snoreDb >= 55 ? '🔊 63dB SNORE!' : 'Zzz';
+          $('svgSnoreText').setAttribute('fill', snoreDb >= 55 ? '#f43f5e' : '#2dd4bf');
+        }
+        const curAngle = $('headLiftSlider').value;
+        const curTemp = parseFloat($('coolingSlider').value).toFixed(1);
+        $('bedActionSummary').innerText = `Head Elevation: ${curAngle}° • Mattress Temp: ${curTemp}°C`;
+      },
+
+      applyScenario(mode) {
+        this.clearStory();
+        $('morningPhoneModal').classList.add('hidden');
+        const stage = $('somniBedStage');
+        const topBanner = $('somniTopBanner');
+
+        if (mode === 'sense') {
+          stage.classList.remove('distress-alarm-active');
+          topBanner.className = 'glass-card rounded-2xl p-4 sm:p-5 border border-teal-500/40';
+          $('somniClockBox').innerText = '11:15 PM';
+          $('somniClockBox').className = 'px-4 py-2 rounded-xl bg-night-950 border border-slate-700 font-mono text-2xl sm:text-3xl font-extrabold text-teal-300';
+          $('somniStatusDot').className = 'w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping';
+          $('somniStatusText').className = 'text-xs sm:text-sm font-extrabold uppercase tracking-wide text-teal-300';
+          $('somniStatusText').innerText = 'STEP 1 - SENSE: Contactless biometric sensor system';
+          $('somniNarrativeSub').innerText = 'No wearables. No wires on the body. Hidden sensor layer tracks 62 bpm heart rate, 14 breaths/min, and 26.0°C.';
+          $('svgDistressSweat').classList.add('hidden');
+          $('coolingToggle').checked = false; $('coolingSlider').value = 26.0;
+          $('headLiftToggle').checked = false; $('headLiftSlider').value = 0;
+          this.updateBedVisuals({ hr: 62, bpText: 'BP: 118/76 mmHg (Stable)', temp: 26.0, breathText: '14 breaths/min', snoreDb: 36, angle: 0, coolingOn: false, distress: false });
+          this.renderCharts('sense');
+        }
+        else if (mode === 'distress') {
+          this.playAlarmBeep();
+          stage.classList.add('distress-alarm-active');
+          topBanner.className = 'glass-card rounded-2xl p-4 sm:p-5 border-2 border-rose-500 bg-rose-950/30';
+          $('somniClockBox').innerText = '03:00 AM';
+          $('somniClockBox').className = 'px-4 py-2 rounded-xl bg-rose-950 border border-rose-500 font-mono text-2xl sm:text-3xl font-extrabold text-rose-400 animate-pulse';
+          $('somniStatusDot').className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping';
+          $('somniStatusText').className = 'text-xs sm:text-sm font-extrabold uppercase tracking-wide text-rose-300';
+          $('somniStatusText').innerText = '03:00 ALARM — Every night, your body is sending out a distress signal.';
+          $('somniNarrativeSub').innerText = 'Chronic sleep deprivation: the silent killer behind STROKE and heart failure. Based on medical data: poor sleep raises blood pressure and the risk of stroke.';
+          $('svgDistressSweat').classList.remove('hidden');
+          $('coolingToggle').checked = false; $('coolingSlider').value = 31.0;
+          $('headLiftToggle').checked = false; $('headLiftSlider').value = 0;
+          this.updateBedVisuals({ hr: 128, bpText: '⚠️ Blood pressure: Rising (160/100)', temp: 31.0, breathText: 'Irregular', snoreDb: 63, angle: 0, coolingOn: false, distress: true });
+          this.renderCharts('distress');
+
+          $('peakHr').value = 128; $('sysBp').value = 160; $('diaBp').value = 100; $('snoringDb').value = 63; $('breathingPattern').value = 'irregular'; $('mattressTemp').value = 31.0;
+          UI.refreshDashboardFromForm(false);
+          App.toast('🚨 03:00 AM ALARM: Heart rate 128 bpm, BP Rising, Snoring 63 dB — High Stroke Risk!', 'error');
+        }
+        else if (mode === 'autopilot') {
+          stage.classList.remove('distress-alarm-active');
+          topBanner.className = 'glass-card rounded-2xl p-4 sm:p-5 border border-indigo-400/60 bg-indigo-950/30';
+          $('somniClockBox').innerText = '03:52 AM';
+          $('somniClockBox').className = 'px-4 py-2 rounded-xl bg-night-950 border border-teal-500 font-mono text-2xl sm:text-3xl font-extrabold text-teal-300';
+          $('somniStatusDot').className = 'w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping';
+          $('somniStatusText').className = 'text-xs sm:text-sm font-extrabold uppercase tracking-wide text-teal-300';
+          $('somniStatusText').innerText = 'STEP 3 - ACT: AUTO-PILOT Command sent: cool the mattress to 19°C & lifting head section to 12°';
+          $('somniNarrativeSub').innerText = 'Automatic action: mattress cooling from 30.8°C to 19.0°C and anti-snoring head lift to 12°. Snoring drops from 63 dB to 38 dB, heart rate stabilizes to 58 bpm.';
+          $('svgDistressSweat').classList.add('hidden');
+          $('coolingToggle').checked = true; $('coolingSlider').value = 19.0;
+          $('headLiftToggle').checked = true; $('headLiftSlider').value = 12;
+          this.updateBedVisuals({ hr: 58, bpText: 'BP Stabilized: 116/75 mmHg', temp: 19.0, breathText: '14 breaths/min', snoreDb: 38, angle: 12, coolingOn: true, distress: false });
+          this.renderCharts('autopilot');
+
+          $('peakHr').value = 64; $('sysBp').value = 116; $('diaBp').value = 75; $('snoringDb').value = 38; $('breathingPattern').value = 'normal'; $('mattressTemp').value = 19.0;
+          UI.refreshDashboardFromForm(false);
+          App.toast('🤖 AUTO-PILOT Activated: Mattress cooled to 19°C & Head lifted to 12°!', 'success');
+        }
+        else if (mode === 'morning') {
+          this.applyScenario('autopilot');
+          $('somniClockBox').innerText = '06:30 AM';
+          $('somniStatusText').innerText = 'MORNING: Sleep Score 92/100 • Heart safe • Deep Sleep optimal';
+          $('somniNarrativeSub').innerText = 'Protect your sleep. Protect your life. The Evolution of Bedding: SomniSync Dashboard.';
+          $('morningPhoneModal').classList.remove('hidden');
+          App.triggerFireworks();
+          App.toast('🌅 Morning Summary: Sleep Score 92/100 • Heart safe • Deep Sleep optimal!', 'success');
+        }
+      },
+
+      startAutoStory() {
+        this.clearStory();
+        App.toast('▶️ Playing Full SomniSync Nocturnal Stroke Prevention Storyboard...', 'info');
+        this.applyScenario('distress');
+        this.storyTimers.push(setTimeout(() => this.applyScenario('sense'), 4800));
+        this.storyTimers.push(setTimeout(() => this.applyScenario('autopilot'), 9500));
+        this.storyTimers.push(setTimeout(() => this.applyScenario('morning'), 14500));
+      },
+
+      renderCharts(mode) {
+        const hrData = mode === 'distress'
+          ? [65, 61, 59, 62, 96, 128, 122, 115, 110]
+          : mode === 'autopilot'
+          ? [65, 60, 58, 59, 71, 66, 59, 58, 58]
+          : [64, 61, 59, 58, 57, 58, 59, 60, 62];
+
+        const tempData = mode === 'distress'
+          ? [26.0, 26.8, 28.1, 29.5, 30.8, 31.0, 31.0, 30.8, 30.6]
+          : [26.0, 27.2, 29.0, 30.5, 31.0, 24.5, 19.0, 19.0, 19.0];
+
+        const snoreData = mode === 'distress'
+          ? [36, 38, 42, 49, 58, 63, 62, 60, 59]
+          : [35, 37, 36, 38, 45, 63, 41, 38, 36];
+
+        const baseOpts = (min, max) => ({
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { min, max, ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        });
+
+        if (App.charts.somniHr) App.charts.somniHr.destroy();
+        App.charts.somniHr = new Chart($('somniHrChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: this.hours,
+            datasets: [{ data: hrData, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.15)', tension: 0.38, fill: true, pointRadius: 3 }]
+          },
+          options: baseOpts(45, 140)
+        });
+
+        if (App.charts.somniTemp) App.charts.somniTemp.destroy();
+        App.charts.somniTemp = new Chart($('somniTempChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: this.hours,
+            datasets: [
+              { data: tempData, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.12)', tension: 0.38, fill: true, pointRadius: 3 },
+              { data: Array(9).fill(19), borderColor: '#14b8a6', borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 }
+            ]
+          },
+          options: baseOpts(15, 34)
+        });
+
+        if (App.charts.somniSnore) App.charts.somniSnore.destroy();
+        App.charts.somniSnore = new Chart($('somniSnoreChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: this.hours,
+            datasets: [
+              { data: snoreData, borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,0.15)', tension: 0.38, fill: true, pointRadius: 3 },
+              { data: Array(9).fill(55), borderColor: '#f43f5e', borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 }
+            ]
+          },
+          options: baseOpts(20, 75)
+        });
+      }
+    };
+
+    /* =====================================================================
+       MODULE 5: UI CONTROLLER, CHARTS, BREATHING & WEB AUDIO SYNTH
+       ===================================================================== */
+    const UI = {
+      getFormData() {
+        return {
+          date: $('recordDate').value || new Date().toISOString().slice(0, 10),
+          bedTime: $('bedTime').value || '23:00',
+          wakeTime: $('wakeTime').value || '06:30',
+          awakenings: parseInt($('awakenings').value, 10) || 0,
+          perceivedQuality: parseInt($('perceivedQuality').value, 10) || 4,
+          rhr: parseInt($('rhr').value, 10) || 58,
+          peakHr: parseInt($('peakHr').value, 10) || 66,
+          sysBp: parseInt($('sysBp').value, 10) || 118,
+          diaBp: parseInt($('diaBp').value, 10) || 76,
+          snoringDb: parseInt($('snoringDb').value, 10) || 36,
+          breathingPattern: $('breathingPattern').value || 'normal',
+          mattressTemp: parseFloat($('mattressTemp').value) || 24.0,
+          soreness: parseInt($('soreness').value, 10) || 2,
+          height: parseFloat($('height').value) || 170,
+          weight: parseFloat($('weight').value) || 65,
+          waterIntake: parseInt($('waterIntake').value, 10) || 2100,
+          exerciseTime: parseInt($('exerciseTime').value, 10) || 35,
+          caffeineIntake: $('caffeineIntake').checked,
+          lastCaffeineTime: $('lastCaffeineTime').value || '16:30'
+        };
+      },
+
+      refreshDashboardFromForm(celebrate = false) {
+        const d = this.getFormData();
+        const m = MetricsEngine.compute(d);
+        this.renderDashboard(d, m, celebrate);
+      },
+
+      renderDashboard(d, m, celebrate = false) {
+        $('scoreValue').innerText = m.score;
+        $('scoreCircle').style.strokeDashoffset = 264 - (m.score / 100) * 264;
+        $('chronotypeBadge').innerText = m.chronotype;
+        $('statDuration').innerText = `${Math.floor(m.sleepMins / 60)}h ${m.sleepMins % 60}m`;
+        $('statEfficiency').innerText = `${m.efficiency}%`;
+        $('statSleepCycles').innerText = `${m.sleepCycles} Cycles`;
+        $('statSleepDebt').innerText = m.sleepDebtMinutes <= 15 ? 'No Debt (0h)' : `${Math.floor(m.sleepDebtMinutes / 60)}h ${m.sleepDebtMinutes % 60}m Debt`;
+        $('statCNSStatus').innerText = `${m.cnsReadiness}% Ready`;
+
+        const sCard = $('strokeSafetyCard');
+        const sBadge = $('strokeStatusBadge');
+        const emBanner = $('emergencyStrokeBanner');
+        $('strokeRiskPct').innerText = `${m.strokeRisk}%`;
+
+        if (m.strokeLevel === 'HIGH') {
+          sCard.className = 'p-6 sm:p-8 rounded-3xl bg-rose-950/40 border-2 border-rose-500 flex flex-col justify-center items-center text-center distress-alarm-active';
+          sBadge.className = 'px-4 py-1.5 mb-2 rounded-full text-xs font-extrabold bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)]';
+          sBadge.innerText = 'HIGH STROKE & APNEA RISK';
+          $('strokeRiskTitle').className = 'text-2xl sm:text-3xl font-black text-rose-300 mt-2';
+          $('strokeRiskTitle').innerText = '03:00 AM Distress Alert';
+          $('strokeRiskSub').className = 'text-sm text-rose-200 mt-2';
+          $('strokeRiskSub').innerText = `Spike ${d.peakHr}bpm • BP ${d.sysBp}/${d.diaBp} • Snore ${d.snoringDb}dB`;
+          $('strokeRiskPct').className = 'text-6xl sm:text-7xl font-black font-mono text-rose-400 drop-shadow-lg my-4';
+          $('optimalRecoveryBanner').classList.add('hidden');
+          emBanner.classList.remove('hidden');
+        } else if (m.strokeLevel === 'MODERATE') {
+          sCard.className = 'p-6 sm:p-8 rounded-3xl bg-amber-950/30 border-2 border-amber-500/50 flex flex-col justify-center items-center text-center';
+          sBadge.className = 'px-4 py-1.5 mb-2 rounded-full text-xs font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+          sBadge.innerText = 'MODERATE SYMPATHETIC STRESS';
+          $('strokeRiskTitle').className = 'text-2xl sm:text-3xl font-black text-amber-300 mt-2';
+          $('strokeRiskTitle').innerText = 'Elevated Sympathetic Tone';
+          $('strokeRiskSub').className = 'text-sm text-amber-200/70 mt-2';
+          $('strokeRiskSub').innerText = 'Monitor airway & bedroom cooling';
+          $('strokeRiskPct').className = 'text-6xl sm:text-7xl font-black font-mono text-amber-400 drop-shadow-lg my-4';
+          $('optimalRecoveryBanner').classList.add('hidden');
+          emBanner.classList.add('hidden');
+        } else {
+          sCard.className = 'p-6 sm:p-8 rounded-3xl bg-night-900/90 border-2 border-emerald-500/40 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(16,185,129,0.1)]';
+          sBadge.className = 'px-4 py-1.5 mb-2 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+          sBadge.innerText = 'HEART SAFE - Low Risk';
+          $('strokeRiskTitle').className = 'text-2xl sm:text-3xl font-black text-emerald-300 mt-2';
+          $('strokeRiskTitle').innerText = 'Cardiovascular Safe';
+          $('strokeRiskSub').className = 'text-sm text-slate-400 mt-2';
+          $('strokeRiskSub').innerText = 'Stable BP & nocturnal sinus rhythm';
+          $('strokeRiskPct').className = 'text-6xl sm:text-7xl font-black font-mono text-emerald-400 drop-shadow-lg my-4';
+          emBanner.classList.add('hidden');
+          if (m.score >= 80) {
+            $('optimalRecoveryBanner').classList.remove('hidden');
+            if (celebrate) App.triggerFireworks();
+          } else {
+            $('optimalRecoveryBanner').classList.add('hidden');
+          }
+        }
+
+        $('statRHR').innerText = `${d.rhr} / ${d.peakHr}`;
+        $('statRHRLabel').innerText = d.peakHr >= 100 ? '⚠️ Nocturnal HR Surge!' : 'Stable Nocturnal HR';
+        $('statRHRLabel').className = `text-xs mt-1 font-semibold ${d.peakHr >= 100 ? 'text-rose-400 font-bold' : 'text-emerald-400'}`;
+
+        $('statBP').innerText = `${d.sysBp}/${d.diaBp}`;
+        $('statBPLabel').innerText = (d.sysBp >= 140 || d.diaBp >= 90) ? '⚠️ Nocturnal Hypertension' : 'Normal Vascular Tone';
+        $('statBPLabel').className = `text-xs mt-1 font-semibold ${(d.sysBp >= 140 || d.diaBp >= 90) ? 'text-rose-400 font-bold' : 'text-emerald-400'}`;
+
+        $('statSnoring').innerText = `${d.snoringDb} dB`;
+        $('statSnoringLabel').innerText = d.snoringDb > 55 ? '⚠️ Apnea Risk (>55 dB)' : 'Clear Airway (<55 dB)';
+        $('statSnoringLabel').className = `text-xs mt-1 font-semibold ${d.snoringDb > 55 ? 'text-rose-400 font-bold' : 'text-emerald-400'}`;
+
+        $('statBMI').innerText = m.bmi;
+        $('statBMILabel').innerText = m.bmi < 18.5 ? 'Underweight' : m.bmi <= 24.9 ? 'Optimal Range' : 'Elevated BMI';
+        $('statWater').innerText = `${d.waterIntake} / ${m.recommendedWater} ml`;
+        $('statWaterLabel').innerText = d.waterIntake >= m.recommendedWater ? 'Optimal Hydration' : `Deficit: ${m.recommendedWater - d.waterIntake} ml`;
+        $('statCaffeineLoad').innerText = `${m.cafMg} mg`;
+        $('statCaffeineLabel').innerText = m.cafMg > 0 ? ' Inhibiting Deep N3' : 'Clear Adenosine Receptors';
+
+        Avatar3D.syncFromInputs();
+        this.renderInsights(d, m);
+        this.renderAnalyticsTab(d, m);
+      },
+
+      renderInsights(d, m) {
+        const list = [];
+        if (m.strokeLevel === 'HIGH' || d.snoringDb > 55 || d.peakHr >= 100) {
+          list.push({
+            color: 'border-rose-500/40 bg-rose-950/30 text-rose-300',
+            title: '🚨 SomniSync Intervention: 12° Anti-Snoring Head Lift & 19°C Mattress Cooling',
+            desc: `Nighttime HR spike (${d.peakHr} bpm) or snoring (${d.snoringDb} dB) exceeds safe thresholds. Elevate head section to 12° to open the upper airway and cool the mattress to 19°C to blunt sympathetic blood pressure surges.`
+          });
+        }
+        if (d.sysBp >= 135 || d.diaBp >= 85) {
+          list.push({
+            color: 'border-amber-500/40 bg-amber-950/30 text-amber-300',
+            title: '🩺 Nocturnal Blood Pressure Guard (Non-Dipping Prevention)',
+            desc: `BP of ${d.sysBp}/${d.diaBp} mmHg combined with fragmented sleep elevates morning stroke risk. Practice 5 minutes of 4-7-8 breathwork in Tab 5 before sleep to activate parasympathetic vagal tone.`
+          });
+        }
+        if (d.caffeineIntake) {
+          list.push({
+            color: 'border-indigo-500/40 bg-indigo-950/30 text-indigo-300',
+            title: `☕ Caffeine Cutoff Protocol (~${m.cafMg} mg Residual at Bedtime)`,
+            desc: 'Late caffeine blocks adenosine receptors, causes mild vasoconstriction, and reduces slow-wave Deep N3 sleep by up to 20%.'
+          });
+        }
+        if (d.waterIntake < m.recommendedWater - 250) {
+          list.push({
+            color: 'border-sky-500/40 bg-sky-950/30 text-sky-300',
+            title: `💧 Daytime Hydration Optimization (Add ${m.recommendedWater - d.waterIntake} ml)`,
+            desc: 'Proper daytime hydration maintains healthy blood viscosity and lowers nocturnal cardiovascular strain. Taper fluids 90 minutes before bed.'
+          });
+        }
+        if (list.length === 0) {
+          list.push({
+            color: 'border-teal-500/40 bg-teal-950/30 text-teal-300',
+            title: '✨ Optimal Bio-Recovery & Heart Safe Status',
+            desc: 'Your nocturnal heart rate, blood pressure, airway acoustics, and sleep architecture are in peak physiological alignment.'
+          });
+        }
+        $('recommendationsList').innerHTML = list.map(i => `
+          <div class="p-3.5 rounded-xl border ${i.color}">
+            <div class="text-xs font-extrabold text-white mb-0.5">${i.title}</div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">${i.desc}</p>
+          </div>
+        `).join('');
+      },
+
+      renderAnalyticsTab(d, m) {
+        const s = m.stages;
+        $('stageAwakeText').innerText = `Awake: ${s.awakePct}%`;
+        $('stageLightText').innerText = `Light: ${s.lightPct}%`;
+        $('stageDeepText').innerText = `Deep (N3): ${s.deepPct}%`;
+        $('stageREMText').innerText = `REM: ${s.remPct}%`;
+        $('barAwake').style.width = `${s.awakePct}%`;
+        $('barLight').style.width = `${s.lightPct}%`;
+        $('barDeep').style.width = `${s.deepPct}%`;
+        $('barREM').style.width = `${s.remPct}%`;
+        $('stageDeepMins').innerText = `${Math.round((m.sleepMins * s.deepPct) / 100)} mins`;
+        $('stageREMMins').innerText = `${Math.round((m.sleepMins * s.remPct) / 100)} mins`;
+
+        if (App.charts.stage) App.charts.stage.destroy();
+        App.charts.stage = new Chart($('sleepStageChart').getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Awake', 'Light (N1/N2)', 'Deep (N3)', 'REM'],
+            datasets: [{ data: [s.awakePct, s.lightPct, s.deepPct, s.remPct], backgroundColor: ['#f43f5e', '#38bdf8', '#6366f1', '#14b8a6'], borderWidth: 0 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+        });
+
+        if (App.charts.circadian) App.charts.circadian.destroy();
+        App.charts.circadian = new Chart($('circadianCurveChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '00:00', '03:00'],
+            datasets: [
+              { label: 'Circadian Alertness (%)', data: [60, 92, 85, 65, 88, 55, 25, 15], borderColor: '#14b8a6', tension: 0.4, fill: true, backgroundColor: 'rgba(20,184,166,0.1)' },
+              { label: 'Adenosine Sleep Drive (%)', data: [20, 32, 48, 62, 75, 88, 95, 50], borderColor: '#a855f7', borderDash: [5, 5], tension: 0.4 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } } }
+        });
+
+        const b = m.breakdown;
+        const bars = [
+          ['Sleep Duration (Max 40 pts)', b.durationScore, 40, 'bg-indigo-500'],
+          ['Continuity & Airway Stability (Max 25 pts)', b.continuityScore, 25, 'bg-teal-400'],
+          ['Subjective Morning Feel (Max 15 pts)', b.feelingScore, 15, 'bg-amber-400'],
+          ['Cardiovascular & CNS Recovery (Max 10 pts)', b.cnsScore, 10, 'bg-rose-400'],
+          ['Lifestyle & Hydration (Max 10 pts)', b.lifestyleScore, 10, 'bg-emerald-400']
+        ];
+        $('scoreBreakdownBars').innerHTML = bars.map(([lbl, val, max, col]) => `
+          <div>
+            <div class="flex justify-between mb-1"><span>${lbl}</span><span class="font-bold text-white">${val}/${max} pts</span></div>
+            <div class="w-full h-2 rounded-full bg-night-900"><div class="h-full ${col} rounded-full" style="width:${(val/max)*100}%"></div></div>
+          </div>
+        `).join('');
+
+        // Critical Thinking & Blindspot Warnings
+        const warns = [];
+        if (d.caffeineIntake || d.awakenings >= 2) {
+          warns.push(['Junk Sleep Phenomenon', 'Even if total time in bed exceeds 7 hours, residual caffeine or micro-arousals flatten slow-wave Delta sleep—leaving you exhausted despite sufficient sleep quantity.']);
+        }
+        if (d.peakHr >= 100 || d.snoringDb > 55 || d.rhr >= 65) {
+          warns.push(['Sympathetic Overdrive & Nocturnal Surge', `Elevated nighttime heart rate (${d.peakHr} bpm) or airway obstruction (${d.snoringDb} dB) triggers nocturnal cortisol and blood pressure spikes—the primary driver of early-morning stroke.`]);
+        }
+        if (d.waterIntake < m.recommendedWater - 300) {
+          warns.push(['Dehydration Masking as Fatigue', 'Sub-optimal hydration reduces cerebral blood flow and mimics daytime sleepiness, often leading to unnecessary afternoon caffeine intake.']);
+        }
+        if (warns.length === 0) {
+          warns.push(['Optimal Neuro-Cardiovascular Alignment', 'No physiological contradictions detected between sleep duration, nocturnal heart rate, and airway stability.']);
+        }
+        $('warningCountBadge').innerText = `${warns.length} Alerts`;
+        $('criticalWarningsContainer').innerHTML = warns.map(([t, desc]) => `
+          <div class="p-3.5 rounded-xl bg-night-900 border border-amber-500/30">
+            <div class="text-xs font-bold text-amber-300 mb-1">${t}</div>
+            <p class="text-[11px] text-slate-300">${desc}</p>
+          </div>
+        `).join('');
+      },
+
+      renderHistoryAndTrends(records) {
+        const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+        let streak = 0;
+        for (let i = sorted.length - 1; i >= 0; i--) { if (sorted[i].score >= 75) streak++; else break; }
+        const avg = sorted.length ? Math.round(sorted.reduce((s, r) => s + r.score, 0) / sorted.length) : 0;
+        $('streakCountText').innerText = `${streak} Days 🔥`;
+        $('avgScore7DaysText').innerText = `Avg Score: ${avg}/100 (${sorted.length} logs)`;
+
+        $('heatmapBadges').innerHTML = sorted.slice(-7).map(r => {
+          const c = r.score >= 80 ? 'bg-emerald-500' : r.score >= 65 ? 'bg-amber-500' : 'bg-rose-500';
+          return `<div class="w-6 h-8 rounded ${c} text-night-950 font-extrabold text-[10px] flex items-center justify-center" title="${r.date}: ${r.score} pts">${r.score}</div>`;
+        }).join('');
+
+        if (App.charts.trend) App.charts.trend.destroy();
+        App.charts.trend = new Chart($('sleepTrendChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: sorted.map(r => r.date.slice(5)),
+            datasets: [
+              { label: 'Recovery Score', data: sorted.map(r => r.score), borderColor: '#14b8a6', tension: 0.35 },
+              { label: 'Resting HR (RHR bpm)', data: sorted.map(r => r.rhr || 58), borderColor: '#818cf8', tension: 0.35 },
+              { label: 'Peak Night HR (bpm)', data: sorted.map(r => r.peakHr || 66), borderColor: '#f43f5e', borderDash: [4, 4], tension: 0.35 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } } }
+        });
+
+        const filter = $('filterScoreSelect')?.value || 'all';
+        let filtered = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
+        if (filter === 'high') filtered = filtered.filter(r => r.score >= 80);
+        else if (filter === 'medium') filtered = filtered.filter(r => r.score >= 60 && r.score < 80);
+        else if (filter === 'low') filtered = filtered.filter(r => r.score < 60);
+
+        $('historyTableBody').innerHTML = filtered.map(r => `
+          <tr class="hover:bg-slate-800/50 cursor-pointer" onclick="UI.loadRecord('${r.id}')">
+            <td class="py-2.5 px-4 font-semibold text-white">${r.date}</td>
+            <td class="py-2.5 px-4 text-slate-400">${r.bedTime} → ${r.wakeTime}</td>
+            <td class="py-2.5 px-4 text-indigo-300 font-bold">${Math.floor(r.durationMinutes/60)}h ${r.durationMinutes%60}m</td>
+            <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${r.score>=80?'bg-teal-950 text-teal-300':r.score>=60?'bg-amber-950 text-amber-300':'bg-rose-950 text-rose-300'}">${r.score} pts</span></td>
+            <td class="py-2.5 px-4 text-slate-300">${r.rhr || 58} / ${r.peakHr || 66} bpm</td>
+            <td class="py-2.5 px-4 text-slate-300">${r.sysBp || 118}/${r.diaBp || 76} • ${r.snoringDb || 36} dB</td>
+            <td class="py-2.5 px-4 text-center"><button onclick="event.stopPropagation(); UI.deleteRecord('${r.id}')" class="text-slate-500 hover:text-rose-400">Delete</button></td>
+          </tr>
+        `).join('');
+      },
+
+      loadRecord(id) {
+        const rec = App.getRecords().find(r => r.id === id);
+        if (!rec) return;
+        ['date', 'bedTime', 'wakeTime', 'awakenings', 'rhr', 'peakHr', 'sysBp', 'diaBp', 'snoringDb', 'breathingPattern', 'mattressTemp', 'soreness', 'height', 'weight', 'waterIntake', 'exerciseTime'].forEach(k => {
+          const el = $(k === 'date' ? 'recordDate' : k);
+          if (el && rec[k] !== undefined) el.value = rec[k];
+        });
+        $('heightSlider').value = rec.height || 170;
+        $('weightSlider').value = rec.weight || 65;
+        $('caffeineIntake').checked = !!rec.caffeineIntake;
+        this.refreshDashboardFromForm(false);
+        App.switchTab('tab-dashboard');
+        App.toast(`Loaded biometric log for ${rec.date}`, 'info');
+      },
+
+      deleteRecord(id) {
+        const next = App.getRecords().filter(r => r.id !== id);
+        App.saveRecords(next);
+        this.renderHistoryAndTrends(next);
+        App.toast('Record deleted.', 'info');
+      }
+    };
+
+    /* =====================================================================
+       INITIALIZATION & EVENT BINDINGS
+       ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+      $('recordDate').value = new Date().toISOString().slice(0, 10);
+
+      const cvs = $('starryCanvas');
+      if (cvs) {
+        const ctx = cvs.getContext('2d');
+        cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+        const stars = Array.from({ length: 55 }, () => ({ x: Math.random() * cvs.width, y: Math.random() * cvs.height, r: Math.random() * 1.3 + 0.3 }));
+        ctx.fillStyle = 'rgba(226,232,240,0.6)';
+        stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); });
+      }
+
+      Avatar3D.init();
+      SomniSync.init();
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => App.switchTab(btn.dataset.tab));
+      });
+
+      const bindPair = (numId, rangeId) => {
+        $(numId)?.addEventListener('input', () => { $(rangeId).value = $(numId).value; Avatar3D.syncFromInputs(); });
+        $(rangeId)?.addEventListener('input', () => { $(numId).value = $(rangeId).value; Avatar3D.syncFromInputs(); });
+      };
+      bindPair('height', 'heightSlider');
+      bindPair('weight', 'weightSlider');
+      ['rhr', 'peakHr', 'sysBp', 'snoringDb', 'soreness'].forEach(id => $(id)?.addEventListener('input', () => Avatar3D.syncFromInputs()));
+
+      $('btnToggleAutoRotate')?.addEventListener('click', () => Avatar3D.autoRotate = !Avatar3D.autoRotate);
+      $('btnToggleWireframe')?.addEventListener('click', () => {
+        Avatar3D.wireframe = !Avatar3D.wireframe;
+        Avatar3D.mats.bodyMat.wireframe = Avatar3D.wireframe;
+      });
+      $('btnBodyStandard')?.addEventListener('click', () => {
+        Avatar3D.composition = 'standard';
+        $('btnBodyStandard').className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white';
+        $('btnBodyAthletic').className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400';
+        Avatar3D.syncFromInputs();
+      });
+      $('btnBodyAthletic')?.addEventListener('click', () => {
+        Avatar3D.composition = 'athletic';
+        $('btnBodyAthletic').className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white';
+        $('btnBodyStandard').className = 'px-2 py-0.5 rounded text-[10px] font-bold text-slate-400';
+        Avatar3D.syncFromInputs();
+      });
+
+      document.querySelectorAll('#starRating .star').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = parseInt(btn.dataset.val, 10);
+          $('perceivedQuality').value = v;
+          document.querySelectorAll('#starRating .star').forEach(s => {
+            s.classList.toggle('text-amber-400', parseInt(s.dataset.val, 10) <= v);
+            s.classList.toggle('text-slate-600', parseInt(s.dataset.val, 10) > v);
+          });
+        });
+      });
+
+      $('caffeineIntake')?.addEventListener('change', e => $('lastCaffeineTime').classList.toggle('hidden', !e.target.checked));
+
+      $('healthForm')?.addEventListener('submit', e => {
+        e.preventDefault();
+        const d = UI.getFormData();
+        const m = MetricsEngine.compute(d);
+        const rec = { id: 'r-' + Date.now(), ...d, durationMinutes: m.sleepMins, efficiency: m.efficiency, score: m.score };
+        const list = App.getRecords();
+        const idx = list.findIndex(x => x.date === rec.date);
+        if (idx >= 0) list[idx] = rec; else list.push(rec);
+        App.saveRecords(list);
+        UI.renderDashboard(rec, m, true);
+        UI.renderHistoryAndTrends(list);
+        App.switchTab('tab-dashboard');
+        App.toast(m.strokeLevel === 'HIGH' ? '⚠️ High Nocturnal Stroke & Apnea Risk Detected!' : 'Biometric profile analyzed & saved!', m.strokeLevel === 'HIGH' ? 'error' : 'success');
+      });
+
+      // Two-Way 90m Cycle Calculator
+      let calcMode = 'wakeup';
+      const renderCycles = () => {
+        const [h, m] = $('calcTargetTime').value.split(':').map(Number);
+        const base = h * 60 + m;
+        const lat = parseInt($('sleepLatencyRange').value, 10) || 15;
+        $('latencyValueDisplay').innerText = `${lat} mins`;
+        $('idealBedtimesGrid').innerHTML = [6, 5, 4, 3].map(c => {
+          let mins = calcMode === 'wakeup' ? base - (c * 90 + lat) : base + (c * 90 + lat);
+          while (mins < 0) mins += 1440;
+          mins %= 1440;
+          const tStr = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+          return `<button type="button" onclick="$('${calcMode === 'wakeup' ? 'bedTime' : 'wakeTime'}').value='${tStr}'; App.toast('Applied ${tStr} to Tab 1!','success')" class="p-3 rounded-xl bg-night-900 border ${c===5?'border-teal-400 text-teal-300':'border-slate-700 text-slate-200'} text-center">
+            <div class="text-base font-extrabold text-white">${tStr}</div>
+            <div class="text-[11px]">${c} Cycles (${c*1.5}h)</div>
+          </button>`;
+        }).join('');
+      };
+      $('modeWakeUpBtn')?.addEventListener('click', () => {
+        calcMode = 'wakeup';
+        $('modeWakeUpBtn').className = 'py-2 px-3 rounded-lg text-xs font-bold bg-indigo-600 text-white';
+        $('modeBedTimeBtn').className = 'py-2 px-3 rounded-lg text-xs font-bold text-slate-400';
+        renderCycles();
+      });
+      $('modeBedTimeBtn')?.addEventListener('click', () => {
+        calcMode = 'bedtime';
+        $('modeBedTimeBtn').className = 'py-2 px-3 rounded-lg text-xs font-bold bg-teal-600 text-white';
+        $('modeWakeUpBtn').className = 'py-2 px-3 rounded-lg text-xs font-bold text-slate-400';
+        renderCycles();
+      });
+      $('calcTargetTime')?.addEventListener('change', renderCycles);
+      $('sleepLatencyRange')?.addEventListener('input', renderCycles);
+      renderCycles();
+
+      // Chronotype selector
+      const chronos = {
+        lion: ['Lion 🦁 (Early Morning Achiever)', 'Ideal Sleep: 21:30 – 05:30 • Peak Focus: 07:30 – 11:30 • Best Workout: 16:30'],
+        bear: ['Bear 🐻 (Solar Rhythm - 55% of Population)', 'Ideal Sleep: 23:00 – 07:00 • Peak Focus: 09:30 – 13:30 • Best Workout: 17:30'],
+        wolf: ['Wolf 🐺 (Creative Night Owl)', 'Ideal Sleep: 00:30 – 08:00 • Peak Focus: 13:00 – 17:00 & 20:00 – 22:30'],
+        dolphin: ['Dolphin 🐬 (Light, Sensitive Sleeper)', 'Ideal Sleep: 23:30 – 06:30 • Requires 19°C mattress cooling & 4-7-8 breathwork before sleep']
+      };
+      App.selectChronotype = (k) => {
+        document.querySelectorAll('.chrono-btn').forEach(b => b.className = 'chrono-btn p-2.5 rounded-xl bg-night-900 border border-slate-800 text-center');
+        $(`chrono-btn-${k}`).className = 'chrono-btn p-2.5 rounded-xl bg-teal-950/40 border border-teal-400/70 text-center';
+        const [title, desc] = chronos[k];
+        $('chronotypeDetailBox').innerHTML = `<div class="font-bold text-sm text-teal-300">${title}</div><p class="text-xs text-slate-300">${desc}</p>`;
+      };
+      App.selectChronotype('bear');
+
+      // Multi-Mode Breathing Coach
+      let breathTimer = null, currentBreathMode = '478';
+      const breathProtocols = {
+        '478': {
+          desc: 'Inhale through nose for 4s — Hold for 7s — Exhale slowly through mouth for 8s.',
+          phases: [['Inhale (Nose)', 4, 1.38], ['Hold Breath', 7, 1.38], ['Exhale (Mouth)', 8, 0.9]]
+        },
+        'box': {
+          desc: 'Navy SEAL Box Breathing: Inhale 4s — Hold 4s — Exhale 4s — Hold Empty 4s.',
+          phases: [['Inhale', 4, 1.38], ['Hold Full', 4, 1.38], ['Exhale', 4, 0.9], ['Hold Empty', 4, 0.9]]
+        },
+        'coherent': {
+          desc: 'Heart Rate Variability (HRV) Resonance: Smooth 5.5s inhale & 5.5s exhale.',
+          phases: [['Deep Inhale', 5, 1.38], ['Gentle Exhale', 5, 0.9]]
+        }
+      };
+      document.querySelectorAll('.breath-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentBreathMode = btn.dataset.mode;
+          document.querySelectorAll('.breath-mode-btn').forEach(b => b.className = 'breath-mode-btn py-1.5 px-2 rounded-xl text-xs font-bold bg-night-900 text-slate-400 border border-slate-800');
+          btn.className = 'breath-mode-btn py-1.5 px-2 rounded-xl text-xs font-bold bg-teal-950 text-teal-300 border border-teal-500/50';
+          $('breathInstruction').innerText = breathProtocols[currentBreathMode].desc;
+        });
+      });
+
+      $('btnToggleBreathing')?.addEventListener('click', () => {
+        if (breathTimer) {
+          clearInterval(breathTimer); breathTimer = null;
+          $('breathPhaseText').innerText = 'Ready'; $('breathTimerText').innerText = '--';
+          $('breathMainCircle').style.transform = 'scale(1)';
+          $('btnToggleBreathing').innerText = 'Start Breathing Session';
+          return;
+        }
+        $('btnToggleBreathing').innerText = 'Stop Breathing Session';
+        const phases = breathProtocols[currentBreathMode].phases;
+        let idx = 0, left = phases[0][1];
+        const apply = () => {
+          $('breathPhaseText').innerText = phases[idx][0];
+          $('breathTimerText').innerText = `${left}s`;
+          $('breathMainCircle').style.transform = `scale(${phases[idx][2]})`;
+        };
+        apply();
+        breathTimer = setInterval(() => {
+          left--;
+          if (left <= 0) { idx = (idx + 1) % phases.length; left = phases[idx][1]; }
+          apply();
+        }, 1000);
+      });
+
+      // Web Audio Synthesizer (Pink, Brown, Binaural 2.5Hz)
+      let synthCtx = null, synthPlaying = false;
+      $('btnMasterAudioToggle')?.addEventListener('click', () => {
+        if (!synthCtx) {
+          synthCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const buf = synthCtx.createBuffer(1, synthCtx.sampleRate * 2, synthCtx.sampleRate);
+          const out = buf.getChannelData(0);
+          for (let i = 0; i < out.length; i++) out[i] = (Math.random() * 2 - 1) * 0.04;
+          const src = synthCtx.createBufferSource(); src.buffer = buf; src.loop = true;
+          src.connect(synthCtx.destination); src.start();
+        }
+        if (synthPlaying) {
+          synthCtx.suspend(); synthPlaying = false;
+          $('btnMasterAudioToggle').innerHTML = '<i data-lucide="volume-2" class="w-4 h-4"></i><span>Enable Soundscape</span>';
+        } else {
+          synthCtx.resume(); synthPlaying = true;
+          $('btnMasterAudioToggle').innerHTML = '<i data-lucide="volume-x" class="w-4 h-4"></i><span>Mute Soundscape</span>';
+          App.toast('🎧 Playing procedural sleep soundscape & 2.5Hz Delta Binaural Beats', 'success');
+        }
+        if (window.lucide) lucide.createIcons();
+      });
+
+      ['PinkNoise', 'BrownNoise', 'Binaural'].forEach(k => {
+        $(`vol${k}`)?.addEventListener('input', e => $(`val${k}`).innerText = `${e.target.value}%`);
+      });
+
+      document.querySelectorAll('.hygiene-check').forEach(chk => {
+        chk.addEventListener('change', () => {
+          const done = Array.from(document.querySelectorAll('.hygiene-check')).filter(c => c.checked).length;
+          $('hygieneProgressText').innerText = `${done}/4 Completed`;
+          if (done === 4) { App.triggerFireworks(); App.toast('100% Sleep Hygiene Checklist Completed!', 'success'); }
+        });
+      });
+
+      $('filterScoreSelect')?.addEventListener('change', () => UI.renderHistoryAndTrends(App.getRecords()));
+      $('btnFireworksTest')?.addEventListener('click', () => App.triggerFireworks());
+      $('btnSampleData')?.addEventListener('click', () => {
+        App.saveRecords(sampleRecords);
+        UI.loadRecord(sampleRecords[sampleRecords.length - 1].id);
+        UI.renderHistoryAndTrends(sampleRecords);
+        App.toast('Loaded 7-day sample dataset (including 03:00 AM stroke alert log on Oct 26)!', 'success');
+      });
+      $('btnClearData')?.addEventListener('click', () => $('confirmModal').classList.remove('hidden'));
+      $('btnCancelClear')?.addEventListener('click', () => $('confirmModal').classList.add('hidden'));
+      $('btnConfirmClear')?.addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        UI.renderHistoryAndTrends([]);
+        $('confirmModal').classList.add('hidden');
+        App.toast('All history cleared.', 'info');
+      });
+      $('btnExportCSV')?.addEventListener('click', () => {
+        const list = App.getRecords();
+        if (!list.length) return App.toast('No records to export!', 'warning');
+        const csv = 'Date,Bedtime,WakeTime,Score,RHR_bpm,PeakHR_bpm,BloodPressure,Snoring_dB\n' + list.map(r => `${r.date},${r.bedTime},${r.wakeTime},${r.score},${r.rhr},${r.peakHr},${r.sysBp}/${r.diaBp},${r.snoringDb}`).join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = 'SomniSync_Report.csv';
+        a.click();
+      });
+
+      let records = App.getRecords();
+      if (!records.length) { records = sampleRecords; App.saveRecords(records); }
+      const latest = records[records.length - 1];
+      UI.loadRecord(latest.id);
+      UI.renderHistoryAndTrends(records);
+    });
+  </script>
+<!-- SomniSync Bridge: START (nhan du lieu tu somnisync_sim.js qua /events, co nut dieu khien + che do demo) -->
+<div id="bridgePanel" class="fixed bottom-4 left-4 z-50 w-64 rounded-2xl border border-slate-700 bg-slate-900/90 backdrop-blur p-3 text-xs shadow-2xl transition-all duration-300">
+  <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
+    <span class="font-bold text-slate-300 flex items-center gap-2">
+      <span id="bridgeDot" class="w-2 h-2 rounded-full bg-slate-500"></span>Device Simulator
+    </span>
+    <div class="flex items-center gap-2">
+      <span id="bridgeConn" class="text-slate-500">offline</span>
+      <button id="bridgeCloseBtn" type="button" class="p-1 -mr-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer" title="Đóng bảng giả lập">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="mt-2 flex items-end justify-between">
+    <div>
+      <div class="text-[10px] uppercase tracking-wide text-slate-500">Heart rate</div>
+      <div class="text-2xl font-mono font-extrabold text-white"><span id="bridgeHr">--</span> <span class="text-xs font-semibold text-slate-400">bpm</span></div>
+    </div>
+    <div id="bridgeState" class="px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-400">WAITING</div>
+  </div>
+  <div id="bridgeCountdownWrap" class="hidden mt-2">
+    <div id="bridgeCountdownText" class="text-[11px] font-bold text-rose-300"></div>
+    <div class="mt-1 h-1.5 rounded bg-slate-800 overflow-hidden">
+      <div id="bridgeBar" class="h-full bg-rose-500" style="width:100%;transition:width 1s linear"></div>
+    </div>
+  </div>
+  <div class="mt-3 grid grid-cols-2 gap-2">
+    <button id="bridgeBtnEmergency" type="button" class="px-2 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition cursor-pointer">🚨 Giả lập khẩn cấp</button>
+    <button id="bridgeBtnCancel" type="button" class="px-2 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold transition cursor-pointer">✅ Hủy báo động</button>
+  </div>
+  <div id="bridgeMsg" class="mt-2 text-[11px] text-slate-500"></div>
+</div>
+
+<!-- Nút mở lại bảng khi đã đóng -->
+<button id="bridgeTogglePill" type="button" class="hidden fixed bottom-4 left-4 z-50 flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-slate-700/80 bg-slate-900/90 backdrop-blur-md text-xs font-semibold text-slate-200 shadow-2xl hover:border-teal-500/60 hover:bg-slate-800/90 hover:text-white transition-all cursor-pointer group" title="Mở bảng Device Simulator">
+  <span id="bridgeDotCollapsed" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+  <span class="flex items-center gap-1.5 font-bold tracking-wide">
+    <span>Simulator</span>
+    <span id="bridgeHrCollapsed" class="font-mono text-teal-400 text-[11px]">-- bpm</span>
+  </span>
+  <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-400 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+</button>
+<script>
+(function () {
+  // Mo bang file:// thi ket noi toi localhost; them ?port=3001 neu doi cong
+  const params = new URLSearchParams(location.search);
+  const BASE = location.protocol === 'file:' ? 'http://localhost:' + (params.get('port') || '3000') : '';
+  const el = (id) => document.getElementById(id);
+  const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  let mode = 'normal';       // 'normal' | 'emergency'
+  let totalDelay = 15;
+  let firstConnect = true;
+  let connected = false;     // dang noi voi somnisync_sim.js
+  let demoActive = false;    // dang chay che do demo trong trinh duyet
+
+  const safe = (fn) => (...a) => { try { return fn(...a); } catch (e) { console.error('[SomniSync Bridge]', e); } };
+
+  const IDLE_MSG = 'Chua noi simulator. Bam nut de demo trong trinh duyet, hoac chay node somnisync_sim.js roi mo http://localhost:3000';
+
+  function setConn(on) {
+    connected = on;
+    const dotCls = 'w-2 h-2 rounded-full ' + (on ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500');
+    const pillDotCls = 'w-2.5 h-2.5 rounded-full ' + (on ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500');
+    if (el('bridgeDot')) el('bridgeDot').className = dotCls;
+    if (el('bridgeDotCollapsed')) el('bridgeDotCollapsed').className = pillDotCls;
+    if (el('bridgeConn')) {
+      el('bridgeConn').textContent = on ? 'connected' : (demoActive ? 'demo' : 'offline');
+      el('bridgeConn').className = on ? 'text-emerald-400' : (demoActive ? 'text-amber-400' : 'text-slate-500');
+    }
+    if (!on && !demoActive) {
+      setPanelState('WAITING', 'bg-slate-800 text-slate-400');
+      setMsg(IDLE_MSG);
+      if (el('bridgeCountdownWrap')) el('bridgeCountdownWrap').classList.add('hidden');
+    }
+  }
+  function setPanelState(label, cls) {
+    if (el('bridgeState')) {
+      el('bridgeState').textContent = label;
+      el('bridgeState').className = 'px-2 py-1 rounded-lg font-bold ' + cls;
+    }
+    if (label === 'EMERGENCY') {
+      el('bridgeTogglePill')?.classList.add('border-rose-500', 'animate-pulse');
+    } else {
+      el('bridgeTogglePill')?.classList.remove('border-rose-500', 'animate-pulse');
+    }
+  }
+  function setMsg(t) { if (el('bridgeMsg')) el('bridgeMsg').textContent = t; }
+  function showHr(hr) {
+    if (el('bridgeHr')) el('bridgeHr').textContent = hr;
+    if (el('bridgeHrCollapsed')) el('bridgeHrCollapsed').textContent = hr + ' bpm';
+  }
+
+  const onReading = safe((d) => {
+    showHr(d.hr);
+    SomniSync.updateBedVisuals({ hr: d.hr });
+  });
+
+  const applyEmergency = safe((hr) => {
+    mode = 'emergency';
+    openBridgePanel();
+    try { App.switchTab('tab-somnisync'); } catch (e) {}
+    SomniSync.applyScenario('distress');            // bao dong, tieng bip, banner dot quy
+    SomniSync.updateBedVisuals({ hr });             // dung nhip tim that tu simulator
+    el('peakHr').value = hr;
+    UI.refreshDashboardFromForm(false);
+    showHr(hr);
+    setPanelState('EMERGENCY', 'bg-rose-950 text-rose-300 animate-pulse');
+    setMsg('Bam "Huy bao dong" (hoac phim 1 trong terminal) de huy.');
+  });
+
+  const applyIntervention = safe((angle, temp) => {
+    el('headLiftToggle').checked = true;  el('headLiftSlider').value = angle;
+    el('coolingToggle').checked = true;   el('coolingSlider').value = temp;
+    SomniSync.updateBedVisuals({ angle, temp, coolingOn: true, distress: false });
+    el('somniStatusText').innerText = 'AUTO-ADJUST: raising head to ' + angle + '° and cooling mattress to ' + temp + '°C';
+    App.toast('🤖 Abnormal HR detected. Auto-adjusting bed to ' + angle + '° and lowering temperature...', 'info');
+  });
+
+  const onCountdown = safe((remaining) => {
+    el('bridgeCountdownWrap').classList.remove('hidden');
+    el('bridgeCountdownText').textContent = 'Goi khan cap sau ' + remaining + 's';
+    el('bridgeBar').style.width = Math.max(0, remaining / totalDelay * 100) + '%';
+    el('somniNarrativeSub').innerText = 'Emergency call in ' + remaining + 's. Press "Huy bao dong" (or 1 in the simulator terminal) to cancel.';
+  });
+
+  const onCall = safe((d) => {
+    if (d.phase === 'placing') {
+      el('bridgeCountdownText').textContent = 'Dang goi khan cap...';
+      el('bridgeBar').style.width = '0%';
+      el('somniStatusText').innerText = 'CALLING EMERGENCY CONTACT...';
+      App.toast('📞 Calling emergency contact (English + Vietnamese voice alert)...', 'error');
+    } else {
+      const msg = d.dryRun ? 'DRY-RUN: no real call was made.'
+                : d.ok ? 'Emergency call placed.' : 'Emergency call FAILED.';
+      setMsg(d.message || msg);
+      el('somniStatusText').innerText = msg.toUpperCase();
+      App.toast((d.ok ? '✅ ' : '⚠️ ') + msg, d.ok ? (d.dryRun ? 'info' : 'success') : 'error');
+    }
+  });
+
+  const applyNormal = safe((cancelled) => {
+    const was = mode;
+    mode = 'normal';
+    el('bridgeCountdownWrap').classList.add('hidden');
+    setPanelState('NORMAL', 'bg-emerald-950 text-emerald-300');
+    setMsg(demoActive ? 'Che do demo trong trinh duyet (khong goi dien that).' : 'Nhip tim binh thuong.');
+    if (was === 'emergency') {
+      SomniSync.applyScenario('sense');
+      el('peakHr').value = 70; el('sysBp').value = 118; el('diaBp').value = 76;
+      el('snoringDb').value = 36; el('breathingPattern').value = 'normal'; el('mattressTemp').value = 26.0;
+      UI.refreshDashboardFromForm(false);
+      App.toast(cancelled ? '✅ Alarm cancelled. Back to normal monitoring.' : '✅ Back to normal monitoring.', 'success');
+    }
+  });
+
+  const onSnapshot = safe((d) => {
+    if (d.delay) totalDelay = d.delay;
+    if (d.hr != null) showHr(d.hr);
+    if (d.state === 2) {
+      applyEmergency(d.hr || 130);
+      applyIntervention(12, 19);
+      if (d.remaining != null && d.remaining > 0) onCountdown(d.remaining);
+    } else {
+      applyNormal(false);
+    }
+  });
+
+  const handle = (d) => {
+    switch (d.event) {
+      case 'snapshot':     return onSnapshot(d);
+      case 'reading':      return onReading(d);
+      case 'normal':       return applyNormal(d.cancelled);
+      case 'emergency':    return applyEmergency(d.hr);
+      case 'intervention': return applyIntervention(d.angle, d.temp);
+      case 'countdown':    return onCountdown(d.remaining);
+      case 'call':         return onCall(d);
+    }
+  };
+
+  // ============ DEMO TRONG TRINH DUYET (khi khong co simulator) ============
+  // Dung lai dung cac hoat anh o tren, chi khac la nguon su kien la chinh trang nay.
+  const demo = { hr: null, cd: null, esc: null };
+  function stopDemoTimers() {
+    clearInterval(demo.hr); clearInterval(demo.cd); clearTimeout(demo.esc);
+    demo.hr = demo.cd = demo.esc = null;
+  }
+  function startDemoNormal() {
+    stopDemoTimers();
+    const tick = () => handle({ event: 'reading', hr: rand(65, 75), status: 'NORMAL' });
+    tick();
+    demo.hr = setInterval(tick, 3000);
+  }
+  function demoEmergency() {
+    if (mode === 'emergency') return;
+    demoActive = true; setConn(false);
+    stopDemoTimers();
+    const hr0 = rand(125, 140);
+    handle({ event: 'emergency', hr: hr0 });
+    handle({ event: 'reading', hr: hr0, status: 'CRITICAL' });
+    handle({ event: 'intervention', angle: 12, temp: 19 });
+    let remaining = totalDelay;
+    handle({ event: 'countdown', remaining });
+    demo.hr = setInterval(() => handle({ event: 'reading', hr: rand(125, 140), status: 'CRITICAL' }), 3000);
+    demo.cd = setInterval(() => {
+      remaining -= 1;
+      if (remaining > 0) return handle({ event: 'countdown', remaining });
+      clearInterval(demo.cd); demo.cd = null;
+      handle({ event: 'call', phase: 'placing', dryRun: true });
+      demo.esc = setTimeout(() => handle({ event: 'call', phase: 'done', ok: true, dryRun: true,
+        message: 'Demo: khong goi dien that' }), 1500);
+    }, 1000);
+  }
+  function demoCancel() {
+    if (mode !== 'emergency') return;
+    stopDemoTimers();
+    handle({ event: 'normal', cancelled: true });
+    startDemoNormal();
+  }
+  function stopDemo() { demoActive = false; stopDemoTimers(); }
+
+  // ============ NUT BAM ============
+  // Dang noi simulator qua http://localhost: gui lenh toi server (co token), giong bam phim 2 / 1.
+  // Khong noi: chay demo trong trinh duyet.
+  async function control(action) {
+    if (!connected) return action === 'emergency' ? demoEmergency() : demoCancel();
+    const token = document.querySelector('meta[name="somni-token"]');
+    if (!token) {
+      App.toast('Dang noi simulator: hay mo dashboard qua http://localhost:3000 de dung nut, hoac bam phim 1/2 trong terminal.', 'warning');
+      return;
+    }
+    try {
+      const r = await fetch(BASE + '/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Somni-Token': token.content },
+        body: JSON.stringify({ action })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (e) {
+      App.toast('Khong gui duoc lenh toi simulator: ' + e.message, 'error');
+    }
+  }
+  el('bridgeBtnEmergency').addEventListener('click', () => control('emergency'));
+  el('bridgeBtnCancel').addEventListener('click', () => control('cancel'));
+
+  // ============ DONG / BAT BANG SIMULATOR ============
+  function closeBridgePanel() {
+    const panel = el('bridgePanel');
+    const pill = el('bridgeTogglePill');
+    if (panel) panel.classList.add('hidden');
+    if (pill) pill.classList.remove('hidden');
+    try { localStorage.setItem('somnisync_bridge_panel_closed', 'true'); } catch (e) {}
+  }
+
+  function openBridgePanel() {
+    const panel = el('bridgePanel');
+    const pill = el('bridgeTogglePill');
+    if (panel) panel.classList.remove('hidden');
+    if (pill) pill.classList.add('hidden');
+    try { localStorage.setItem('somnisync_bridge_panel_closed', 'false'); } catch (e) {}
+  }
+
+  el('bridgeCloseBtn')?.addEventListener('click', closeBridgePanel);
+  el('bridgeTogglePill')?.addEventListener('click', openBridgePanel);
+
+  try {
+    if (localStorage.getItem('somnisync_bridge_panel_closed') === 'true') {
+      closeBridgePanel();
+    }
+  } catch (e) {}
+
+  // ============ KET NOI SIMULATOR ============
+  function connect() {
+    let es;
+    try { es = new EventSource(BASE + '/events'); } catch (e) { return setTimeout(connect, 3000); }
+    es.onopen = () => {
+      stopDemo();               // co simulator that thi bo demo, tranh hai nguon cung dieu khien
+      setConn(true);
+      if (firstConnect) {
+        firstConnect = false;
+        try { App.switchTab('tab-somnisync'); } catch (e) {}
+        try { App.toast('🔌 Connected to SomniSync device simulator', 'success'); } catch (e) {}
+      }
+    };
+    es.onmessage = (m) => {
+      let d; try { d = JSON.parse(m.data); } catch (e) { return; }
+      handle(d);
+    };
+    es.onerror = () => {
+      setConn(false);
+      if (es.readyState === 2) { es.close(); setTimeout(connect, 3000); } // bi dong han -> tu ket noi lai
+    };
+  }
+
+  setMsg(IDLE_MSG);
+  let started = false;
+  const start = () => { if (!started) { started = true; connect(); } };
+  window.addEventListener('DOMContentLoaded', start);
+  if (document.readyState !== 'loading') start();
+})();
+</script>
+<!-- SomniSync Bridge: END -->
+</body>
+</html>

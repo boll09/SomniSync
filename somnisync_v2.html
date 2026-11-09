@@ -1,0 +1,2829 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SomniSync — Autonomous Biometric Sleep System & Nocturnal Stroke Guard</title>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            deep: {
+              950: '#060a17',
+              900: '#0b1124',
+              850: '#101833',
+              800: '#152144',
+              700: '#1f2e5c'
+            },
+            teal: {
+              400: '#00d4aa',
+              500: '#00b894',
+              DEFAULT: '#00d4aa'
+            },
+            indigo: {
+              500: '#6366f1'
+            },
+            rose: {
+              500: '#f43f5e'
+            },
+            amber: {
+              500: '#f59e0b'
+            }
+          },
+          fontFamily: {
+            sans: ['"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+            mono: ['"SF Mono"', 'ui-monospace', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Apple-Inspired Dark Mode Global Styling */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #0d1428 0%, #060a17 85%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Custom Glassmorphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.045);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .glass-subcard {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-subcard:hover {
+      border-color: rgba(0, 212, 170, 0.3);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #060a17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 170, 0.4);
+    }
+
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      animation: tabFadeIn 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab-nav-btn {
+      transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 14px;
+    }
+    .tab-nav-btn.active {
+      background: rgba(0, 212, 170, 0.14);
+      color: #00d4aa;
+      border: 1px solid rgba(0, 212, 170, 0.4);
+      box-shadow: 0 4px 18px -4px rgba(0, 212, 170, 0.25);
+    }
+
+    /* Bed Stage Pulsing States */
+    .bed-stage-normal {
+      border-color: rgba(0, 212, 170, 0.25);
+      box-shadow: 0 0 35px -10px rgba(0, 212, 170, 0.18), inset 0 0 30px -15px rgba(0, 212, 170, 0.08);
+    }
+
+    .bed-stage-emergency {
+      animation: emergencyPulse 1.1s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes emergencyPulse {
+      0%, 100% {
+        border-color: rgba(244, 63, 94, 0.85);
+        box-shadow: 0 0 35px 8px rgba(244, 63, 94, 0.45), inset 0 0 45px 5px rgba(244, 63, 94, 0.28);
+      }
+      50% {
+        border-color: rgba(251, 113, 133, 1);
+        box-shadow: 0 0 60px 14px rgba(244, 63, 94, 0.65), inset 0 0 70px 10px rgba(244, 63, 94, 0.42);
+      }
+    }
+
+    .bed-stage-autopilot {
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 0 40px -6px rgba(99, 102, 241, 0.35), inset 0 0 40px -12px rgba(0, 212, 170, 0.2);
+    }
+
+    .bed-stage-morning {
+      border-color: rgba(0, 212, 170, 0.5);
+      box-shadow: 0 0 45px -5px rgba(0, 212, 170, 0.32), inset 0 0 35px -10px rgba(245, 158, 11, 0.15);
+    }
+
+    /* SVG Keyframes Animations */
+    @keyframes radarWave {
+      0% { opacity: 0.65; transform: scaleY(0.85); }
+      50% { opacity: 0.2; transform: scaleY(1.08); }
+      100% { opacity: 0.65; transform: scaleY(0.85); }
+    }
+    .sensor-cone {
+      animation: radarWave 2.2s infinite ease-in-out;
+      transform-origin: bottom center;
+    }
+
+    @keyframes heatFloat {
+      0% { transform: translateY(6px); opacity: 0; }
+      40% { opacity: 0.9; }
+      100% { transform: translateY(-26px); opacity: 0; }
+    }
+    .heat-wave-line {
+      animation: heatFloat 2s infinite linear;
+    }
+
+    @keyframes coolSink {
+      0% { transform: translateY(-16px); opacity: 0; }
+      50% { opacity: 0.95; }
+      100% { transform: translateY(22px); opacity: 0; }
+    }
+    .cool-particle {
+      animation: coolSink 2.4s infinite linear;
+    }
+
+    /* Range Sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+      height: 6px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00d4aa;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 212, 170, 0.7);
+      border: 2px solid #ffffff;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Breathing Circle Animation */
+    .breathing-visual-circle {
+      transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+    }
+
+    /* Emergency Pulse for Floating Panel */
+    .panel-emergency-pulse {
+      animation: panelPulse 1.2s infinite ease-in-out;
+    }
+    @keyframes panelPulse {
+      0%, 100% {
+        border-color: rgba(244, 63, 94, 0.9);
+        box-shadow: 0 0 25px rgba(244, 63, 94, 0.5);
+      }
+      50% {
+        border-color: rgba(251, 113, 133, 1);
+        box-shadow: 0 0 45px rgba(244, 63, 94, 0.85);
+      }
+    }
+  </style>
+</head>
+
+<body class="relative text-slate-100 min-h-screen pb-16 selection:bg-teal-400 selection:text-night-950">
+
+  <!-- Ambient Three.js 3D Background Canvas -->
+  <div id="threeBackgroundContainer" class="fixed inset-0 pointer-events-none z-0 opacity-40"></div>
+
+  <!-- Ambient Circadian Aura Glows -->
+  <div class="fixed top-0 left-1/4 w-[600px] h-[350px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
+  <div class="fixed top-1/3 right-10 w-[500px] h-[400px] bg-teal-500/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
+
+  <!-- SECTION 1: STICKY GLASSMORPHIC HEADER -->
+  <header class="sticky top-0 z-40 w-full glass-card !rounded-none !border-x-0 !border-t-0 border-b border-white/10 shadow-2xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Badges -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-teal-400 to-emerald-300 flex items-center justify-center p-0.5 shadow-lg shadow-teal-500/20">
+          <div class="w-full h-full bg-deep-950 rounded-[14px] flex items-center justify-center">
+            <!-- Moon & Star SVG Icon -->
+            <svg class="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+              <path d="M19 3v4"></path>
+              <path d="M21 5h-4"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-teal-300 bg-clip-text text-transparent">
+              SomniSync
+            </span>
+            <span class="px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider uppercase rounded-full bg-teal-500/15 text-teal-400 border border-teal-500/30 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping"></span>
+              Stroke Guard AI
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium">Autonomous Bio-Intelligent Smart Mattress • Academic Thesis Defense</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-1 sm:gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-md">
+        <button type="button" onclick="App.switchTab('live-monitor')" data-tab="live-monitor" class="tab-nav-btn active px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+          </svg>
+          <span>Live Monitor</span>
+        </button>
+        <button type="button" onclick="App.switchTab('analytics')" data-tab="analytics" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"/>
+          </svg>
+          <span>Analytics</span>
+        </button>
+        <button type="button" onclick="App.switchTab('sleep-lab')" data-tab="sleep-lab" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Sleep Lab</span>
+        </button>
+        <button type="button" onclick="App.switchTab('history')" data-tab="history" class="tab-nav-btn px-3.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+          </svg>
+          <span>History</span>
+        </button>
+      </nav>
+
+      <!-- Right Header Actions: Run Demo & System Clock -->
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="StateMachine.startAutoDemo()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-teal-400 to-indigo-500 text-deep-950 font-black text-xs hover:opacity-95 shadow-md shadow-teal-500/25 transition active:scale-95 flex items-center gap-1.5">
+          <span>▶ Run Demo</span>
+        </button>
+        <div class="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 font-mono text-xs font-semibold text-slate-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="navLiveClock">--:--:--</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 relative z-10">
+
+    <!-- =====================================================================
+         TAB 1: LIVE MONITOR (DEFAULT ACTIVE TAB)
+         ===================================================================== -->
+    <div id="tab-live-monitor" class="tab-pane active space-y-6">
+
+      <!-- TOP STATUS BAR (Full Width Glassmorphic Card) -->
+      <div id="mainTopBanner" class="glass-card p-4 sm:p-5 border border-white/10 relative overflow-hidden">
+        
+        <!-- Emergency Red Glow Bar (Visible when Emergency is active) -->
+        <div id="emergencyStatusBar" class="hidden mb-3 p-3 rounded-xl bg-rose-950/80 border border-rose-500/60 flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-rose-950/50 animate-pulse">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🚨</span>
+            <div>
+              <div class="text-xs sm:text-sm font-black tracking-wide text-rose-200">
+                CRITICAL NOCTURNAL DISTRESS: Emergency Dispatch in <span id="statusBarCountdown" class="text-white font-mono font-black text-base underline">15</span>s
+              </div>
+              <p class="text-[11px] text-rose-300">Continuous tachycardia (>135 BPM) and hyperthermic surge detected. Intervene or system auto-acts.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="w-full sm:w-36 h-2 bg-rose-900/60 rounded-full overflow-hidden border border-rose-500/40">
+              <div id="statusBarProgress" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%;"></div>
+            </div>
+            <button type="button" onclick="StateMachine.cancelEmergency()" class="px-3 py-1 rounded-lg bg-rose-800 hover:bg-rose-700 text-white text-xs font-bold transition shadow">
+              Abort / Cancel
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <!-- Left: Clock & Dynamic Status Text -->
+          <div class="flex items-center gap-3.5">
+            <div id="bannerClockDisplay" class="px-3.5 py-2 rounded-xl bg-deep-950/90 border border-white/10 font-mono text-xl sm:text-2xl font-black text-teal-400 tracking-wider shadow-inner">
+              --:--
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="bannerStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="bannerStatusTitle" class="text-xs sm:text-sm font-extrabold uppercase tracking-wide text-emerald-400">
+                  STEP 1 — SENSE: Contactless biometric monitoring active
+                </span>
+              </div>
+              <p id="bannerStatusDesc" class="text-xs text-slate-400 mt-0.5">
+                Zero wearables. 60 GHz mmWave radar & piezoceramic sensors continuously track cardiopulmonary metrics.
+              </p>
+            </div>
+          </div>
+
+          <!-- Right: 4 Scenario Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="StateMachine.setState('normal')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/[0.05] hover:bg-white/[0.1] text-teal-300 border border-teal-500/30 transition flex items-center gap-1.5">
+              <span>🟢 Step 1: Sense</span>
+            </button>
+            <button type="button" onclick="StateMachine.setState('emergency')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-500/50 transition flex items-center gap-1.5 shadow-lg shadow-rose-950/30">
+              <span class="animate-bounce">🚨</span>
+              <span>03:00 AM Distress</span>
+            </button>
+            <button type="button" onclick="StateMachine.setState('autopilot')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-400/50 transition flex items-center gap-1.5">
+              <span>🤖 Auto-Pilot</span>
+            </button>
+            <button type="button" onclick="StateMachine.setState('morning')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border border-emerald-400/50 transition flex items-center gap-1.5">
+              <span>🌅 Morning Summary</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAIN GRID: 65% LEFT (Bed SVG Visualizer) + 35% RIGHT (Control Panel) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: SMART BED SVG VISUALIZER (8 cols / ~65%) -->
+        <div id="somniBedStage" class="lg:col-span-8 glass-card p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-white/10 bed-stage-normal">
+          
+          <!-- Top 3 Telemetry Cards Row -->
+          <div class="grid grid-cols-3 gap-3 relative z-10 mb-2">
+            
+            <!-- Heart Rate Card -->
+            <div id="cardHeartRate" class="glass-subcard p-3.5 border-rose-500/30">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                <span class="flex items-center gap-1.5">
+                  <span id="hrDot" class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                  Heart Rate
+                </span>
+                <span class="text-[10px] text-slate-400">mmWave</span>
+              </div>
+              <div id="bedLiveHr" class="text-xl sm:text-2xl font-black font-mono text-white mt-1">68 bpm</div>
+              <div id="bedLiveHrSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Normal sinus rhythm</div>
+            </div>
+
+            <!-- Mattress Temp / Blood Pressure Card -->
+            <div id="cardMattressTemp" class="glass-subcard p-3.5 border-amber-500/30">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  Mattress Temp
+                </span>
+                <span id="bedLiveBp" class="text-[10px] font-mono text-slate-300">BP: 118/76</span>
+              </div>
+              <div id="bedLiveTemp" class="text-xl sm:text-2xl font-black font-mono text-amber-300 mt-1">24.0 °C</div>
+              <div id="bedLiveTempSub" class="text-[10px] text-slate-400 font-semibold mt-0.5">Optimal Thermal Comfort</div>
+            </div>
+
+            <!-- Snoring / Breathing Card -->
+            <div id="cardSnoring" class="glass-subcard p-3.5 border-sky-500/30">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                  Acoustic & Airway
+                </span>
+                <span id="bedLiveBreathRate" class="text-[10px] font-mono text-slate-300">14 br/min</span>
+              </div>
+              <div id="bedLiveSnoring" class="text-xl sm:text-2xl font-black font-mono text-sky-300 mt-1">36 dB</div>
+              <div id="bedLiveSnoringSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Clear Airway (&lt;55 dB)</div>
+            </div>
+
+          </div>
+
+          <!-- SVG SMART BED CROSS-SECTION -->
+          <div class="my-4 relative flex items-center justify-center select-none py-2">
+            <svg id="smartBedSvg" viewBox="0 0 760 230" class="w-full max-w-[720px] h-auto overflow-visible">
+              <defs>
+                <!-- Radar Beam Gradient -->
+                <linearGradient id="radarBeamGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00d4aa" stop-opacity="0.03"/>
+                  <stop offset="100%" stop-color="#00d4aa" stop-opacity="0.38"/>
+                </linearGradient>
+
+                <!-- Blanket Gradient -->
+                <linearGradient id="blanketGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#1e293b"/>
+                  <stop offset="50%" stop-color="#2d3748"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+
+                <!-- Mattress Core Gradient -->
+                <linearGradient id="mattressCoreGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#334155"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+              </defs>
+
+              <!-- SENSOR LAYER RADAR CONES (Step 1: Sense) -->
+              <g id="svgRadarCones">
+                <polygon points="215,75 165,152 265,152" fill="url(#radarBeamGrad)" class="sensor-cone" />
+                <polygon points="385,75 325,152 445,152" fill="url(#radarBeamGrad)" class="sensor-cone" style="animation-delay: -0.7s;" />
+                <polygon points="535,75 480,152 590,152" fill="url(#radarBeamGrad)" class="sensor-cone" style="animation-delay: -1.4s;" />
+                
+                <!-- Elliptical Radar Rings -->
+                <ellipse cx="385" cy="162" rx="90" ry="16" fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-opacity="0.35" />
+                <ellipse cx="385" cy="166" rx="140" ry="24" fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-opacity="0.2" />
+              </g>
+
+              <!-- HEAT WAVES (Visible in Emergency / Temp > 27°C) -->
+              <g id="svgHeatWaves" class="hidden" stroke="#f59e0b" stroke-width="2.2" fill="none" stroke-linecap="round">
+                <path d="M220,115 Q212,95 224,75 T220,35" class="heat-wave-line" />
+                <path d="M290,115 Q282,95 294,75 T290,35" class="heat-wave-line" style="animation-delay: -0.4s;" />
+                <path d="M360,115 Q352,95 364,75 T360,35" class="heat-wave-line" style="animation-delay: -0.8s;" />
+                <path d="M430,115 Q422,95 434,75 T430,35" class="heat-wave-line" style="animation-delay: -1.2s;" />
+                <path d="M500,115 Q492,95 504,75 T500,35" class="heat-wave-line" style="animation-delay: -1.6s;" />
+              </g>
+
+              <!-- COOLING PARTICLES (Visible during Auto-Pilot cooling) -->
+              <g id="svgCoolParticles" class="hidden" fill="#00d4aa">
+                <circle cx="210" cy="85" r="3.2" class="cool-particle" />
+                <circle cx="265" cy="70" r="2.8" class="cool-particle" style="animation-delay: -0.5s;" />
+                <circle cx="325" cy="82" r="3.2" class="cool-particle" style="animation-delay: -1.1s;" />
+                <circle cx="390" cy="68" r="3.0" class="cool-particle" style="animation-delay: -0.3s;" />
+                <circle cx="455" cy="80" r="3.2" class="cool-particle" style="animation-delay: -1.4s;" />
+                <circle cx="515" cy="72" r="2.6" class="cool-particle" style="animation-delay: -0.8s;" />
+              </g>
+
+              <!-- ARTICULATED HEAD-LIFT GROUP (Tilts from 0° to 15° around pivot x=300, y=148) -->
+              <g id="svgHeadLiftGroup" style="transform-origin: 300px 148px; transform: rotate(0deg); transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);">
+                <!-- Movable Upper Mattress Section -->
+                <rect x="132" y="132" width="168" height="16" rx="4" fill="url(#mattressCoreGrad)" stroke="#475569" stroke-width="0.8" />
+                <!-- Intelligent Hydro-Thermal & Sensor Band -->
+                <rect id="svgMattressBandHead" x="132" y="144" width="168" height="7" fill="#00d4aa" opacity="0.8" />
+                
+                <!-- Pillow -->
+                <rect x="145" y="116" width="56" height="17" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.5" />
+                
+                <!-- Sleeper's Head, Torso & Facial Expressions -->
+                <g id="svgSleeperHead">
+                  <!-- Head Circle -->
+                  <circle cx="174" cy="104" r="18" fill="#f5d0b5" />
+                  <!-- Hair -->
+                  <path d="M156,104 C156,85 190,85 192,102 C184,95 167,96 156,104 Z" fill="#2c1a1d" />
+                  <!-- Closed Sleeping Eye -->
+                  <path id="svgEyePath" d="M178,103 Q182,106 186,103" stroke="#2c1a1d" stroke-width="2" fill="none" stroke-linecap="round" />
+                  
+                  <!-- Distress Sweat Drops (Visible in Emergency) -->
+                  <g id="svgDistressSweat" class="hidden">
+                    <circle cx="166" cy="95" r="2.8" fill="#38bdf8" class="animate-ping" />
+                    <circle cx="193" cy="98" r="2.5" fill="#38bdf8" />
+                  </g>
+                  
+                  <!-- Snoring / Status Text Badge -->
+                  <text id="svgSnoreText" x="194" y="78" fill="#a78bfa" font-size="13" font-weight="800" font-family="monospace">Zzz</text>
+                </g>
+
+                <!-- Sleeper Upper Torso Under Blanket -->
+                <path d="M190,111 L285,111 L285,132 L190,132 Z" fill="#4f46e5" opacity="0.75" />
+              </g>
+
+              <!-- FIXED LOWER MATTRESS SECTION -->
+              <rect x="298" y="132" width="337" height="16" rx="4" fill="url(#mattressCoreGrad)" stroke="#475569" stroke-width="0.8" />
+              <rect id="svgMattressBandBody" x="298" y="144" width="337" height="7" fill="#00d4aa" opacity="0.8" />
+              
+              <!-- Piezo Sensor Nodes -->
+              <g fill="#99f6e4">
+                <circle cx="165" cy="147.5" r="2" /><circle cx="215" cy="147.5" r="2" /><circle cx="265" cy="147.5" r="2" />
+                <circle cx="325" cy="147.5" r="2" /><circle cx="385" cy="147.5" r="2" /><circle cx="445" cy="147.5" r="2" />
+                <circle cx="505" cy="147.5" r="2" /><circle cx="565" cy="147.5" r="2" /><circle cx="610" cy="147.5" r="2" />
+              </g>
+
+              <!-- BLANKET OVER SLEEPER -->
+              <path d="M230,105 C335,101 515,104 618,116 L618,132 L230,132 Z" fill="url(#blanketGrad)" stroke="#475569" stroke-width="0.8" />
+
+              <!-- LUXURY WOODEN BED FRAME -->
+              <rect x="115" y="65" width="16" height="138" rx="4" fill="#3e2723" stroke="#271510" stroke-width="1" />
+              <rect x="115" y="151" width="532" height="17" rx="3" fill="#4e342e" stroke="#271510" stroke-width="1" />
+              <rect x="631" y="136" width="16" height="67" rx="4" fill="#3e2723" stroke="#271510" stroke-width="1" />
+
+              <!-- SENSOR LAYER CALLOUT BOX -->
+              <g id="svgSensorCallout">
+                <rect x="460" y="42" width="165" height="26" rx="6" fill="#0d1b2a" stroke="#00d4aa" stroke-width="1.2" />
+                <text x="542" y="59" fill="#99f6e4" font-size="11" font-weight="700" text-anchor="middle">mmWave Radar Array (60 GHz)</text>
+                <line x1="510" y1="68" x2="510" y2="145" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3,3" />
+                <line x1="570" y1="68" x2="570" y2="145" stroke="#00d4aa" stroke-width="1.2" stroke-dasharray="3,3" />
+              </g>
+            </svg>
+
+            <!-- MORNING 92/100 SMARTPHONE POPUP OVERLAY -->
+            <div id="morningPhoneModal" class="hidden absolute inset-0 bg-deep-950/85 backdrop-blur-md z-30 flex items-center justify-center p-4">
+              <div class="glass-card p-6 w-72 text-center border-2 border-teal-400/60 shadow-[0_0_60px_rgba(0,212,170,0.35)] relative animate-fadeIn">
+                <button type="button" onclick="document.getElementById('morningPhoneModal').classList.add('hidden')" class="absolute top-3 right-3 text-slate-400 hover:text-white text-sm font-bold">
+                  ✕
+                </button>
+                <div class="text-[10px] uppercase font-bold tracking-widest text-teal-400 mb-1">Morning SomniSync Brief</div>
+                <h4 class="text-sm font-black text-white mb-3">Cardiovascular Safe Night</h4>
+
+                <!-- Circular 92 Score Ring -->
+                <div class="relative w-28 h-28 mx-auto flex items-center justify-center mb-3">
+                  <svg class="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="#1e293b" stroke-width="8" fill="none" />
+                    <circle cx="50" cy="50" r="40" stroke="#00d4aa" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="251" stroke-dashoffset="20" />
+                  </svg>
+                  <div class="absolute flex flex-col items-center">
+                    <span class="text-3xl font-black text-white tracking-tight">92</span>
+                    <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Score</span>
+                  </div>
+                </div>
+
+                <span class="inline-block px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mb-3">
+                  Heart Safe • Deep Sleep Optimal
+                </span>
+
+                <div class="space-y-1.5 text-[11px] text-slate-300 bg-white/[0.03] p-2.5 rounded-xl border border-white/5 mb-4 text-left">
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Resting HR:</span>
+                    <span class="font-bold text-white">58 bpm</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Mattress Intervention:</span>
+                    <span class="font-bold text-teal-300">12° Lift + 19°C Cool</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Stroke Risk Level:</span>
+                    <span class="font-bold text-emerald-400">Minimal (8%)</span>
+                  </div>
+                </div>
+
+                <button type="button" onclick="document.getElementById('morningPhoneModal').classList.add('hidden')" class="w-full py-2 rounded-xl bg-teal-400 text-deep-950 font-black text-xs hover:bg-teal-300 transition">
+                  Dismiss Summary
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Telemetry Indicator Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-white/10 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+              <span class="text-slate-400">mmWave Radar:</span>
+              <span class="font-bold text-slate-200">60 GHz Active</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="actuatorStatusDot" class="w-2 h-2 rounded-full bg-indigo-400"></span>
+              <span class="text-slate-400">Head Actuator:</span>
+              <span id="actuatorStatusText" class="font-bold text-slate-200">0° (Flat)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="hydroStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span class="text-slate-400">Hydro-Matrix:</span>
+              <span id="hydroStatusText" class="font-bold text-slate-200">Standby (24°C)</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: MATTRESS CONTROL PANEL (4 cols / ~35%) -->
+        <div class="lg:col-span-4 glass-card p-5 sm:p-6 flex flex-col justify-between border border-white/10 space-y-5">
+          
+          <div>
+            <!-- Panel Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-xl bg-teal-500/15 text-teal-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-sm font-extrabold text-white">Smart Bed Actuators</h3>
+                  <p class="text-[10px] text-slate-400">Dual Closed-Loop Controls</p>
+                </div>
+              </div>
+              <span id="autoPilotBadge" class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                Auto-Pilot Armed
+              </span>
+            </div>
+
+            <!-- Control 1: Hydro-Cooling Slider (16°C to 31°C) -->
+            <div class="glass-subcard p-4 space-y-3 mb-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3"/>
+                  </svg>
+                  Hydro-Thermal Core
+                </span>
+                <span id="tempSliderVal" class="text-sm font-mono font-black text-amber-300">24.0°C</span>
+              </div>
+              
+              <input type="range" id="tempSlider" min="16" max="31" step="0.5" value="24" oninput="MattressControls.setTemp(this.value)" class="w-full">
+              
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span>16°C (Rapid Cool)</span>
+                <span>24°C (Neutral)</span>
+                <span>31°C (Warm)</span>
+              </div>
+
+              <!-- Quick Presets -->
+              <div class="grid grid-cols-3 gap-2 pt-1">
+                <button type="button" onclick="MattressControls.setTemp(19)" class="py-1 px-2 rounded-lg bg-sky-950/60 hover:bg-sky-900 border border-sky-500/30 text-[10px] font-semibold text-sky-300 transition">
+                  19°C Neuro-Cool
+                </button>
+                <button type="button" onclick="MattressControls.setTemp(24)" class="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[10px] font-semibold text-slate-300 transition">
+                  24°C Neutral
+                </button>
+                <button type="button" onclick="MattressControls.setTemp(31)" class="py-1 px-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-500/30 text-[10px] font-semibold text-rose-300 transition">
+                  31°C Heat Surge
+                </button>
+              </div>
+            </div>
+
+            <!-- Control 2: Articulated Head Lift Angle Slider (0° to 15°) -->
+            <div class="glass-subcard p-4 space-y-3 mb-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/>
+                  </svg>
+                  Head Lift Elevation
+                </span>
+                <span id="angleSliderVal" class="text-sm font-mono font-black text-indigo-300">0°</span>
+              </div>
+
+              <input type="range" id="angleSlider" min="0" max="15" step="1" value="0" oninput="MattressControls.setAngle(this.value)" class="w-full">
+
+              <div class="flex items-center justify-between text-[10px] text-slate-400">
+                <span>0° (Flat)</span>
+                <span>6° (Snore Relief)</span>
+                <span>12°-15° (Stroke Guard)</span>
+              </div>
+
+              <!-- Angle Presets -->
+              <div class="grid grid-cols-3 gap-2 pt-1">
+                <button type="button" onclick="MattressControls.setAngle(0)" class="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[10px] font-semibold text-slate-300 transition">
+                  0° Flat
+                </button>
+                <button type="button" onclick="MattressControls.setAngle(6)" class="py-1 px-2 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 transition">
+                  6° Anti-Snore
+                </button>
+                <button type="button" onclick="MattressControls.setAngle(12)" class="py-1 px-2 rounded-lg bg-teal-950/60 hover:bg-teal-900 border border-teal-500/30 text-[10px] font-semibold text-teal-300 transition">
+                  12° Stroke Guard
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Medical Explanation Box (Thesis Defense Rigor) -->
+          <div class="p-3.5 rounded-xl bg-deep-950/80 border border-indigo-500/25 space-y-2 text-xs">
+            <div class="flex items-center gap-1.5 font-bold text-indigo-300 text-[11px] uppercase tracking-wider">
+              <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+              </svg>
+              <span>Clinical Intervention Protocol</span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              <strong class="text-sky-300">1. Hypothermic Neuroprotection (19°C):</strong> Rapid capillary cooling reduces cerebral metabolic rate of oxygen (CMRO₂) by ~5% per °C, mitigating hypoxic tissue necrosis during nocturnal ischemia.
+            </p>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              <strong class="text-indigo-300">2. Intracranial Decompression (12° Angle):</strong> Elevating the upper mattress improves jugular venous outflow, decreases intracranial pressure (ICP), and eliminates obstructive airway collapse without causing sleep arousal.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- BOTTOM CHARTS ROW (3 Equal Columns) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Chart 1: Heart Rate Trend -->
+        <div class="glass-card p-5 border border-white/10">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider">Heart Rate Profile</h4>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">10 PM – 06 AM</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="chartHeartRate"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Mattress Temperature Trend -->
+        <div class="glass-card p-5 border border-white/10">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider">Mattress Core Temp</h4>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">10 PM – 06 AM</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="chartMattressTemp"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Snoring & Acoustic Level -->
+        <div class="glass-card p-5 border border-white/10">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider">Snoring & Acoustic dB</h4>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">10 PM – 06 AM</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="chartSnoring"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         TAB 2: ANALYTICS TAB
+         ===================================================================== -->
+    <div id="tab-analytics" class="tab-pane space-y-6">
+      
+      <!-- Top Overview Score & Hypnogram -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Sleep Architecture Doughnut & Hypnogram Timeline (7 cols) -->
+        <div class="lg:col-span-7 glass-card p-6 border border-white/10 space-y-5">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Sleep Stage Architecture</h3>
+              <p class="text-xs text-slate-400">Polysomnography equivalent derived from mmWave radar micromovement</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
+              NREM/REM Balance: 94%
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            <!-- Doughnut Chart Canvas -->
+            <div class="sm:col-span-5 h-48 relative flex items-center justify-center">
+              <canvas id="chartSleepStages"></canvas>
+              <div class="absolute flex flex-col items-center pointer-events-none">
+                <span class="text-2xl font-black text-white">7h 45m</span>
+                <span class="text-[9px] uppercase tracking-wider text-slate-400">Total Sleep</span>
+              </div>
+            </div>
+
+            <!-- Stage Breakdowns -->
+            <div class="sm:col-span-7 space-y-2 text-xs">
+              <div class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                  <span class="text-slate-300">Deep (Slow Wave Sleep)</span>
+                </div>
+                <span class="font-mono font-bold text-white">1h 58m (25%)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+                  <span class="text-slate-300">REM (Cognitive Restoration)</span>
+                </div>
+                <span class="font-mono font-bold text-white">1h 45m (23%)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                  <span class="text-slate-300">Light Sleep (Stage N1-N2)</span>
+                </div>
+                <span class="font-mono font-bold text-white">3h 32m (46%)</span>
+              </div>
+              <div class="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  <span class="text-slate-300">Awake / Latency</span>
+                </div>
+                <span class="font-mono font-bold text-white">30m (6%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hypnogram Bar Timeline -->
+          <div class="space-y-1.5 pt-2">
+            <div class="flex justify-between text-[11px] text-slate-400 font-semibold">
+              <span>Hypnogram Stage Progression</span>
+              <span>10:30 PM → 06:15 AM</span>
+            </div>
+            <div class="w-full h-5 rounded-lg overflow-hidden flex border border-white/10 shadow-inner">
+              <div style="width: 8%" class="bg-amber-500/80" title="Awake / Fall Asleep (8%)"></div>
+              <div style="width: 22%" class="bg-sky-500/80" title="Light Sleep (22%)"></div>
+              <div style="width: 28%" class="bg-indigo-600/90" title="Deep SWS (28%)"></div>
+              <div style="width: 15%" class="bg-teal-400/80" title="REM (15%)"></div>
+              <div style="width: 17%" class="bg-indigo-600/90" title="Deep SWS 2 (17%)"></div>
+              <div style="width: 10%" class="bg-teal-400/80" title="Morning REM (10%)"></div>
+            </div>
+            <div class="flex justify-between text-[9px] text-slate-500 font-mono">
+              <span>Bedtime</span>
+              <span>Cycle 1</span>
+              <span>Cycle 2</span>
+              <span>Cycle 3</span>
+              <span>Cycle 4</span>
+              <span>Wake</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 Pillars Recovery Score (5 cols) -->
+        <div class="lg:col-span-5 glass-card p-6 border border-white/10 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Restoration Pillars</h3>
+              <p class="text-xs text-slate-400">Multimodal Bio-Index Breakdown</p>
+            </div>
+            <div class="text-right">
+              <span class="text-2xl font-black text-teal-400">92</span>
+              <span class="text-xs text-slate-400">/100</span>
+            </div>
+          </div>
+
+          <div class="space-y-3.5 text-xs">
+            <!-- Pillar 1 -->
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-teal-400"></span> HRV Autonomic Balance
+                </span>
+                <span class="font-mono text-teal-400 font-bold">95% (rMSSD 68ms)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+                <div class="h-full bg-teal-400 rounded-full" style="width: 95%"></div>
+              </div>
+            </div>
+
+            <!-- Pillar 2 -->
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-400"></span> Nocturnal Dipping (Cardiovascular)
+                </span>
+                <span class="font-mono text-emerald-400 font-bold">91% (-14% Dip)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+                <div class="h-full bg-emerald-400 rounded-full" style="width: 91%"></div>
+              </div>
+            </div>
+
+            <!-- Pillar 3 -->
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-sky-400"></span> Thermoregulatory Homeostasis
+                </span>
+                <span class="font-mono text-sky-400 font-bold">90% (Core Dip Normal)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+                <div class="h-full bg-sky-400 rounded-full" style="width: 90%"></div>
+              </div>
+            </div>
+
+            <!-- Pillar 4 -->
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-400"></span> Respiratory Stability
+                </span>
+                <span class="font-mono text-indigo-400 font-bold">96% (AHI 0.8/hr)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+                <div class="h-full bg-indigo-400 rounded-full" style="width: 96%"></div>
+              </div>
+            </div>
+
+            <!-- Pillar 5 -->
+            <div>
+              <div class="flex justify-between text-slate-300 font-semibold mb-1">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span> Circadian Rhythm Alignment
+                </span>
+                <span class="font-mono text-amber-300 font-bold">88% (Phase Match)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+                <div class="h-full bg-amber-400 rounded-full" style="width: 88%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-[11px] text-teal-300">
+            <strong>Optimal Neural Restoration:</strong> Sinus rhythm variability was preserved during REM transitions with zero ventricular ectopic beats.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 24-HOUR CIRCADIAN CURVE CHART & CLINICAL INSIGHTS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Circadian Curve Chart (7 cols) -->
+        <div class="lg:col-span-7 glass-card p-6 border border-white/10">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+            <div>
+              <h4 class="text-sm font-extrabold text-white">24-Hour Circadian Phase Rhythms</h4>
+              <p class="text-xs text-slate-400">Core Body Temperature (°C) vs Endogenous Melatonin (pg/mL)</p>
+            </div>
+            <span class="text-[10px] font-mono text-indigo-300 bg-indigo-950/80 px-2 py-1 rounded-lg border border-indigo-500/30">
+              Optimal Gate: 23:00 – 07:00
+            </span>
+          </div>
+          <div class="h-60 w-full">
+            <canvas id="chartCircadianCurve"></canvas>
+          </div>
+        </div>
+
+        <!-- Clinical Warnings & Nocturnal Hemodynamics (5 cols) -->
+        <div class="lg:col-span-5 glass-card p-6 border border-white/10 space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-white/10">
+            <h4 class="text-sm font-extrabold text-white">Cardiovascular & Stroke Index</h4>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              LOW RISK (8%)
+            </span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3 rounded-xl bg-deep-950/80 border border-emerald-500/30 space-y-1">
+              <div class="flex items-center justify-between text-emerald-300 font-bold">
+                <span>Physiological Nocturnal Dip</span>
+                <span>Normal Dipper (-14.2%)</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Systolic blood pressure decreased from 124 mmHg daytime to 106 mmHg during N3 deep sleep. Non-dipping hypertension risk eliminated.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-deep-950/80 border border-teal-500/30 space-y-1">
+              <div class="flex items-center justify-between text-teal-300 font-bold">
+                <span>Micro-Arousal Index</span>
+                <span>1.4 events / hr</span>
+              </div>
+              <p class="text-[11px] text-slate-400">No obstructive hypopnea cascades observed. Dynamic 12° mattress head elevation prevents pharyngeal airway occlusion.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-deep-950/80 border border-indigo-500/30 space-y-1">
+              <div class="flex items-center justify-between text-indigo-300 font-bold">
+                <span>Vascular Endothelial Safety</span>
+                <span>Optimal Sinus</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Thermal cooling to 19°C reduced early morning sympathetic surge, suppressing the common 03:00 AM - 06:00 AM acute myocardial infarction window.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         TAB 3: SLEEP LAB TAB
+         ===================================================================== -->
+    <div id="tab-sleep-lab" class="tab-pane space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Breathing Coach (6 cols) -->
+        <div class="lg:col-span-6 glass-card p-6 border border-white/10 flex flex-col justify-between space-y-5">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-xl bg-teal-500/15 text-teal-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-sm font-extrabold text-white">Vagal Nerve Breathing Coach</h3>
+                  <p class="text-[10px] text-slate-400">Heart Rate Variability (HRV) Entrainment</p>
+                </div>
+              </div>
+              
+              <!-- Mode Selection -->
+              <select id="breathModeSelect" onchange="BreathingCoach.setMode(this.value)" class="bg-deep-950 border border-white/15 rounded-xl px-2.5 py-1 text-xs text-teal-300 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400">
+                <option value="4-7-8">4-7-8 Parasympathetic Relax</option>
+                <option value="box">Box Breathing (4-4-4-4)</option>
+                <option value="hrv">0.1 Hz HRV Resonance (5.5s)</option>
+              </select>
+            </div>
+
+            <!-- Interactive Visual Breathing Circle -->
+            <div class="py-6 flex flex-col items-center justify-center">
+              <div class="relative w-44 h-44 flex items-center justify-center">
+                <!-- Outer Pulse Glow Ring -->
+                <div id="breathOuterRing" class="absolute inset-0 rounded-full border border-teal-500/20"></div>
+                <!-- Main Animated Circle -->
+                <div id="breathCircle" class="breathing-visual-circle w-28 h-28 rounded-full bg-gradient-to-tr from-teal-500/30 to-indigo-500/30 border-2 border-teal-400 flex flex-col items-center justify-center shadow-[0_0_35px_rgba(0,212,170,0.25)]">
+                  <span id="breathPhaseText" class="text-xs font-black uppercase tracking-wider text-teal-200">Ready</span>
+                  <span id="breathSecondsText" class="text-2xl font-mono font-black text-white mt-0.5">--</span>
+                </div>
+              </div>
+              <p id="breathInstructionText" class="text-xs font-semibold text-slate-300 mt-4 text-center">
+                Press Start to begin vagal down-regulation.
+              </p>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex items-center justify-between pt-3 border-t border-white/10">
+            <span id="breathCycleCounter" class="text-xs font-mono text-slate-400">Cycles: 0 / 8</span>
+            <div class="flex gap-2">
+              <button type="button" id="breathBtnToggle" onclick="BreathingCoach.toggle()" class="px-5 py-2 rounded-xl bg-teal-400 text-deep-950 font-black text-xs hover:bg-teal-300 transition shadow-lg shadow-teal-500/20">
+                Start Session
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 90-Min Sleep Cycle Calculator (6 cols) -->
+        <div class="lg:col-span-6 glass-card p-6 border border-white/10 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-xl bg-amber-500/15 text-amber-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3 class="text-sm font-extrabold text-white">90-Minute Ultradian Sleep Cycle Calc</h3>
+                  <p class="text-[10px] text-slate-400">Avoid waking up during Stage N3 Slow Wave Sleep</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input -->
+            <div class="space-y-3 mb-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                <span class="text-xs font-semibold text-slate-300">Target Wake-Up Time:</span>
+                <input type="time" id="cycleWakeInput" value="06:30" onchange="SleepCalculator.calculate()" class="bg-deep-950 border border-white/15 rounded-xl px-3 py-1.5 text-sm font-mono font-bold text-teal-300 focus:outline-none focus:ring-1 focus:ring-teal-400">
+              </div>
+            </div>
+
+            <!-- Calculated Recommendations Cards -->
+            <div id="cycleResultsContainer" class="space-y-2.5">
+              <!-- Dynamically populated by JS -->
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 pt-3 border-t border-white/10 leading-relaxed">
+            *Accounts for the standard 14-minute sleep latency period. Waking at the completion of a 90-minute cycle eliminates grogginess and sleep inertia.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- SOUNDSCAPE SYNTHESIZER & SLEEP HYGIENE CHECKLIST -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Web Audio Synthesizer (7 cols) -->
+        <div class="lg:col-span-7 glass-card p-6 border border-white/10 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="p-2 rounded-xl bg-indigo-500/15 text-indigo-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z"/>
+                </svg>
+              </span>
+              <div>
+                <h3 class="text-sm font-extrabold text-white">Acoustic Neuro-Modulator (Web Audio Synthesizer)</h3>
+                <p class="text-[10px] text-slate-400">Procedurally Generated Noise & Binaural Waves</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono text-indigo-300 bg-indigo-950/80 border border-indigo-500/30">
+              Web Audio API
+            </span>
+          </div>
+
+          <div class="space-y-3.5">
+            <!-- 1. Pink Noise -->
+            <div class="glass-subcard p-3.5 flex items-center justify-between gap-4">
+              <div class="w-36">
+                <div class="text-xs font-bold text-white">Pink Noise</div>
+                <div class="text-[10px] text-slate-400">1/f Spectral Density</div>
+              </div>
+              <div class="flex-1 flex items-center gap-3">
+                <input type="range" min="0" max="1" step="0.05" value="0.4" oninput="AudioEngine.setVolume('pink', this.value)" class="w-full">
+                <span id="pinkVolText" class="text-[10px] font-mono text-slate-300 w-8">40%</span>
+              </div>
+              <button type="button" id="btnSoundPink" onclick="AudioEngine.toggle('pink')" class="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-xs font-bold text-teal-300 transition w-20 text-center">
+                Play
+              </button>
+            </div>
+
+            <!-- 2. Brown Noise -->
+            <div class="glass-subcard p-3.5 flex items-center justify-between gap-4">
+              <div class="w-36">
+                <div class="text-xs font-bold text-white">Brown Noise</div>
+                <div class="text-[10px] text-slate-400">1/f² Deep Resonance</div>
+              </div>
+              <div class="flex-1 flex items-center gap-3">
+                <input type="range" min="0" max="1" step="0.05" value="0.4" oninput="AudioEngine.setVolume('brown', this.value)" class="w-full">
+                <span id="brownVolText" class="text-[10px] font-mono text-slate-300 w-8">40%</span>
+              </div>
+              <button type="button" id="btnSoundBrown" onclick="AudioEngine.toggle('brown')" class="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-xs font-bold text-amber-300 transition w-20 text-center">
+                Play
+              </button>
+            </div>
+
+            <!-- 3. Binaural Beat -->
+            <div class="glass-subcard p-3.5 flex items-center justify-between gap-4">
+              <div class="w-36">
+                <div class="text-xs font-bold text-white">Binaural Delta (4Hz)</div>
+                <div class="text-[10px] text-slate-400">432Hz / 436Hz Carrier</div>
+              </div>
+              <div class="flex-1 flex items-center gap-3">
+                <input type="range" min="0" max="1" step="0.05" value="0.3" oninput="AudioEngine.setVolume('binaural', this.value)" class="w-full">
+                <span id="binauralVolText" class="text-[10px] font-mono text-slate-300 w-8">30%</span>
+              </div>
+              <button type="button" id="btnSoundBinaural" onclick="AudioEngine.toggle('binaural')" class="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/15 text-xs font-bold text-indigo-300 transition w-20 text-center">
+                Play
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sleep Hygiene Checklist (5 cols) -->
+        <div class="lg:col-span-5 glass-card p-6 border border-white/10 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10">
+            <div>
+              <h3 class="text-sm font-extrabold text-white">Sleep Sanctuary Checklist</h3>
+              <p class="text-[10px] text-slate-400">Evidence-Based Sleep Hygiene Standards</p>
+            </div>
+            <span id="hygieneScoreBadge" class="text-xs font-mono font-bold text-teal-400">5 / 5 Done</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full h-2 rounded-full bg-white/[0.05] overflow-hidden border border-white/5">
+            <div id="hygieneProgressBar" class="h-full bg-gradient-to-r from-teal-400 to-indigo-500 rounded-full transition-all duration-300" style="width: 100%"></div>
+          </div>
+
+          <!-- Checkboxes List -->
+          <div class="space-y-2.5 text-xs">
+            <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
+              <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
+              <span class="text-slate-300">Ambient room temperature set to 18°C – 20°C</span>
+            </label>
+
+            <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
+              <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
+              <span class="text-slate-300">Zero blue-light / screen exposure 60m before bed</span>
+            </label>
+
+            <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
+              <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
+              <span class="text-slate-300">Caffeine cutoff maintained (8+ hours prior)</span>
+            </label>
+
+            <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
+              <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
+              <span class="text-slate-300">Zero light leakage (Blackout blinds &lt; 1 lux)</span>
+            </label>
+
+            <label class="flex items-center gap-3 p-2 rounded-xl bg-white/[0.02] border border-white/5 hover:border-teal-500/30 cursor-pointer transition">
+              <input type="checkbox" checked onchange="SleepHygiene.update()" class="rounded text-teal-400 focus:ring-0 bg-deep-950 border-white/20">
+              <span class="text-slate-300">SomniSync mmWave radar contactless shield armed</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         TAB 4: HISTORY TAB
+         ===================================================================== -->
+    <div id="tab-history" class="tab-pane space-y-6">
+      
+      <!-- 7-Day Streak & Top Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <div class="glass-card p-5 border border-white/10 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-teal-500/15 text-teal-400 flex items-center justify-center font-black text-xl">
+            🔥
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Consistency Streak</div>
+            <div class="text-2xl font-black text-white mt-0.5">7 Nights</div>
+            <div class="text-[10px] text-teal-300 font-semibold mt-0.5">100% mmWave Telemetry</div>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 border border-white/10 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center font-black text-xl">
+            ⭐
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">7-Day Avg Score</div>
+            <div class="text-2xl font-black text-white mt-0.5">86 / 100</div>
+            <div class="text-[10px] text-emerald-400 font-semibold mt-0.5">Restorative Baseline</div>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 border border-white/10 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center font-black text-xl">
+            ❤️
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Avg Resting HR</div>
+            <div class="text-2xl font-black text-white mt-0.5">59 bpm</div>
+            <div class="text-[10px] text-slate-300 font-semibold mt-0.5">Peak Nocturnal Spike: 128 (Saved)</div>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 border border-white/10 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-xl">
+            🛡️
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Interventions</div>
+            <div class="text-2xl font-black text-white mt-0.5">1 Averted</div>
+            <div class="text-[10px] text-amber-300 font-semibold mt-0.5">Oct 26 Nocturnal Distress</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 7-Day Trend Chart -->
+      <div class="glass-card p-6 border border-white/10">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+          <div>
+            <h3 class="text-base font-extrabold text-white">7-Day Trend: Sleep Score vs Resting Heart Rate</h3>
+            <p class="text-xs text-slate-400">Notice the acute distress event on Oct 26 immediately corrected by SomniSync</p>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Oct 24 — Oct 30</span>
+        </div>
+        <div class="h-64 w-full">
+          <canvas id="chartHistoryTrend"></canvas>
+        </div>
+      </div>
+
+      <!-- Clinical History Table (7 Days) -->
+      <div class="glass-card p-6 border border-white/10 overflow-hidden">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+          <h3 class="text-base font-extrabold text-white">Detailed Biometric Night Log</h3>
+          <span class="text-xs text-slate-400 font-mono">Contactless mmWave Records</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="text-[10px] uppercase tracking-wider text-slate-400 bg-white/[0.02] border-b border-white/10">
+              <tr>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Duration</th>
+                <th class="py-3 px-4">Score</th>
+                <th class="py-3 px-4">Resting HR</th>
+                <th class="py-3 px-4">BP (Systolic/Dia)</th>
+                <th class="py-3 px-4">Snoring (dB)</th>
+                <th class="py-3 px-4">Clinical Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-white/5 font-mono">
+              <!-- Pre-loaded 7 records -->
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 30</td>
+                <td class="py-3 px-4">7h 45m</td>
+                <td class="py-3 px-4 text-teal-400 font-bold">92</td>
+                <td class="py-3 px-4">58 bpm</td>
+                <td class="py-3 px-4">118/76</td>
+                <td class="py-3 px-4">36 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Optimal Sinus</span></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 29</td>
+                <td class="py-3 px-4">7h 20m</td>
+                <td class="py-3 px-4 text-teal-400 font-bold">89</td>
+                <td class="py-3 px-4">60 bpm</td>
+                <td class="py-3 px-4">120/78</td>
+                <td class="py-3 px-4">39 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Normal Sinus</span></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 28</td>
+                <td class="py-3 px-4">8h 05m</td>
+                <td class="py-3 px-4 text-teal-400 font-bold">94</td>
+                <td class="py-3 px-4">56 bpm</td>
+                <td class="py-3 px-4">115/74</td>
+                <td class="py-3 px-4">32 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Deep Sleep Optimal</span></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 27</td>
+                <td class="py-3 px-4">7h 10m</td>
+                <td class="py-3 px-4 text-indigo-400 font-bold">85</td>
+                <td class="py-3 px-4">63 bpm</td>
+                <td class="py-3 px-4">122/80</td>
+                <td class="py-3 px-4">42 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Mild Fatigue</span></td>
+              </tr>
+              <!-- CRITICAL DISTRESS EVENT RECORD (OCT 26) -->
+              <tr class="bg-rose-950/40 hover:bg-rose-950/60 border-l-4 border-rose-500">
+                <td class="py-3 px-4 font-bold text-rose-300">Oct 26 🚨</td>
+                <td class="py-3 px-4">5h 40m</td>
+                <td class="py-3 px-4 text-rose-400 font-black">49</td>
+                <td class="py-3 px-4 text-rose-300 font-bold">128 bpm (Spike)</td>
+                <td class="py-3 px-4 text-rose-300">158/98 (Surge)</td>
+                <td class="py-3 px-4 text-rose-300">63 dB (Severe)</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-black bg-rose-500/20 text-rose-200 border border-rose-500/50">🚨 Auto-Pilot Intervened & Saved</span></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 25</td>
+                <td class="py-3 px-4">7h 35m</td>
+                <td class="py-3 px-4 text-teal-400 font-bold">88</td>
+                <td class="py-3 px-4">59 bpm</td>
+                <td class="py-3 px-4">119/77</td>
+                <td class="py-3 px-4">35 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Normal Sinus</span></td>
+              </tr>
+              <tr class="hover:bg-white/[0.02]">
+                <td class="py-3 px-4 font-bold text-white">Oct 24</td>
+                <td class="py-3 px-4">7h 50m</td>
+                <td class="py-3 px-4 text-teal-400 font-bold">91</td>
+                <td class="py-3 px-4">57 bpm</td>
+                <td class="py-3 px-4">117/75</td>
+                <td class="py-3 px-4">34 dB</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Deep Sleep Optimal</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- =====================================================================
+       COLLAPSIBLE FLOATING PRESENTER CONTROL PANEL (BOTTOM-LEFT)
+       ===================================================================== -->
+  <aside id="floatingPresenterPanel" class="fixed bottom-4 left-4 z-50">
+    
+    <!-- EXPANDED STATE -->
+    <div id="panelExpanded" class="w-72 glass-card p-4 border border-white/15 shadow-2xl space-y-3.5 transition-all duration-300">
+      
+      <!-- Panel Header -->
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm">🎛️</span>
+          <span class="text-xs font-black text-white tracking-wide">Presenter Panel</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Toggle Pill -->
+          <div class="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-500/40 text-[10px] font-mono font-bold text-teal-300 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+            <span id="panelPillHr">68 bpm</span>
+          </div>
+          <button type="button" onclick="FloatingPanel.close()" class="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Status Indicator Row -->
+      <div class="flex items-center justify-between text-[11px] bg-white/[0.02] p-2 rounded-xl border border-white/5">
+        <div class="flex items-center gap-1.5">
+          <span id="panelStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="panelStatusLabel" class="text-slate-300 font-medium">Monitoring Normal</span>
+        </div>
+        <span id="panelBpmVal" class="font-mono font-bold text-teal-300">68 BPM</span>
+      </div>
+
+      <!-- 2 Big Action Buttons -->
+      <div class="grid grid-cols-1 gap-2">
+        <button type="button" onclick="StateMachine.setState('emergency')" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-xs transition shadow-lg shadow-rose-900/40 flex items-center justify-center gap-1.5">
+          <span>🚨 Trigger 03:00 AM Distress</span>
+        </button>
+        <button type="button" onclick="StateMachine.setState('normal')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition border border-white/10 flex items-center justify-center gap-1.5">
+          <span>✅ Cancel / Normalize</span>
+        </button>
+      </div>
+
+      <!-- Countdown Bar in Panel (Hidden until emergency active) -->
+      <div id="panelCountdownBox" class="hidden p-2.5 rounded-xl bg-rose-950/80 border border-rose-500/50 space-y-1.5 animate-pulse">
+        <div class="flex justify-between text-[11px] text-rose-200 font-bold">
+          <span>Emergency Countdown</span>
+          <span id="panelCountdownSec" class="font-mono text-white font-black">15s</span>
+        </div>
+        <div class="w-full h-1.5 bg-rose-900 rounded-full overflow-hidden">
+          <div id="panelCountdownBar" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%"></div>
+        </div>
+        <p class="text-[10px] text-rose-300 leading-tight">Click Cancel above to abort emergency call.</p>
+      </div>
+
+      <!-- Scenario Selector Quick Links -->
+      <div class="pt-2 border-t border-white/10 grid grid-cols-2 gap-1.5">
+        <button type="button" onclick="StateMachine.setState('autopilot')" class="py-1 px-2 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/30 text-[10px] font-semibold text-indigo-300 text-center transition">
+          🤖 Step 3: Act
+        </button>
+        <button type="button" onclick="StateMachine.setState('morning')" class="py-1 px-2 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/30 text-[10px] font-semibold text-emerald-300 text-center transition">
+          🌅 Morning
+        </button>
+      </div>
+
+    </div>
+
+    <!-- COLLAPSED STATE (Tiny Pill Button) -->
+    <button type="button" id="panelCollapsedPill" onclick="FloatingPanel.open()" class="hidden px-3.5 py-2 rounded-full glass-card border border-teal-500/40 text-xs font-mono font-bold text-teal-300 hover:scale-105 active:scale-95 transition shadow-2xl flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+      <span>📡 Sim • <span id="collapsedLiveHr">68</span> bpm</span>
+    </button>
+
+  </aside>
+
+  <!-- TOAST CONTAINER (BOTTOM-RIGHT) -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
+
+  <!-- =====================================================================
+       ALL APPLICATION JAVASCRIPT
+       ===================================================================== -->
+  <script>
+    /* =====================================================================
+       1. TOAST NOTIFICATION ENGINE
+       ===================================================================== */
+    const Toast = {
+      show(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `p-3.5 rounded-2xl text-xs font-semibold shadow-2xl pointer-events-auto border flex items-center gap-2.5 transition-all duration-300 transform translate-y-4 opacity-0`;
+
+        if (type === 'error') {
+          toast.className += ` bg-rose-950/90 text-rose-100 border-rose-500/50 shadow-rose-900/40`;
+        } else if (type === 'success') {
+          toast.className += ` bg-emerald-950/90 text-emerald-100 border-teal-400/50 shadow-teal-900/40`;
+        } else if (type === 'warning') {
+          toast.className += ` bg-amber-950/90 text-amber-100 border-amber-500/50 shadow-amber-900/40`;
+        } else {
+          toast.className += ` bg-slate-900/90 text-slate-100 border-indigo-500/40 shadow-indigo-900/30`;
+        }
+
+        toast.innerHTML = `
+          <span class="text-base">${type === 'error' ? '🚨' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+          <span class="flex-1">${message}</span>
+          <button type="button" class="text-white/60 hover:text-white font-bold ml-1" onclick="this.parentElement.remove()">✕</button>
+        `;
+
+        container.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-4', 'opacity-0');
+        });
+
+        // Auto dismiss after 3.5s
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toast.remove(), 350);
+        }, 3500);
+      }
+    };
+
+    /* =====================================================================
+       2. THREE.JS 3D AMBIENT GALAXY / STARFIELD
+       ===================================================================== */
+    const Ambient3D = {
+      init() {
+        const container = document.getElementById('threeBackgroundContainer');
+        if (!container || typeof THREE === 'undefined') return;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 250;
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Generate gentle floating particle galaxy
+        const count = 750;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+
+        const color1 = new THREE.Color(0x00d4aa);
+        const color2 = new THREE.Color(0x6366f1);
+
+        for (let i = 0; i < count; i++) {
+          positions[i * 3] = (Math.random() - 0.5) * 600;
+          positions[i * 3 + 1] = (Math.random() - 0.5) * 450;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
+
+          const mixed = color1.clone().lerp(color2, Math.random());
+          colors[i * 3] = mixed.r;
+          colors[i * 3 + 1] = mixed.g;
+          colors[i * 3 + 2] = mixed.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+          size: 2.2,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.7,
+          blending: THREE.AdditiveBlending
+        });
+
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
+
+        // Smooth rotation
+        function animate() {
+          requestAnimationFrame(animate);
+          points.rotation.y += 0.0004;
+          points.rotation.x += 0.0002;
+          renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+      }
+    };
+
+    /* =====================================================================
+       3. WEB AUDIO SYNTHESIZER & SOUNDS
+       ===================================================================== */
+    const AudioEngine = {
+      ctx: null,
+      pinkNode: null,
+      pinkGain: null,
+      brownNode: null,
+      brownGain: null,
+      binauralOscL: null,
+      binauralOscR: null,
+      binauralGain: null,
+      active: { pink: false, brown: false, binaural: false },
+
+      getCtx() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+        return this.ctx;
+      },
+
+      playAlarmBeep() {
+        try {
+          const ctx = this.getCtx();
+          const now = ctx.currentTime;
+          // 3-beep emergency sequence
+          [0, 0.22, 0.44].forEach(offset => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, now + offset);
+            osc.frequency.exponentialRampToValueAtTime(740, now + offset + 0.14);
+            gain.gain.setValueAtTime(0.25, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + offset);
+            osc.stop(now + offset + 0.16);
+          });
+        } catch (e) {
+          console.warn('AudioContext pending user interaction:', e);
+        }
+      },
+
+      playShortBeep(freq = 880, duration = 0.12) {
+        try {
+          const ctx = this.getCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (e) {}
+      },
+
+      toggle(type) {
+        const ctx = this.getCtx();
+        if (this.active[type]) {
+          this.stopSound(type);
+        } else {
+          this.startSound(type);
+        }
+      },
+
+      startSound(type) {
+        const ctx = this.getCtx();
+        if (type === 'pink') {
+          const bufferSize = ctx.sampleRate * 2;
+          const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+          for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.08;
+            b6 = white * 0.115926;
+          }
+          this.pinkNode = ctx.createBufferSource();
+          this.pinkNode.buffer = noiseBuffer;
+          this.pinkNode.loop = true;
+          this.pinkGain = ctx.createGain();
+          this.pinkGain.gain.setValueAtTime(0.4, ctx.currentTime);
+          this.pinkNode.connect(this.pinkGain);
+          this.pinkGain.connect(ctx.destination);
+          this.pinkNode.start();
+          this.active.pink = true;
+          document.getElementById('btnSoundPink').textContent = 'Pause';
+          document.getElementById('btnSoundPink').classList.replace('text-teal-300', 'text-rose-400');
+        } else if (type === 'brown') {
+          const bufferSize = ctx.sampleRate * 2;
+          const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          let lastOut = 0.0;
+          for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            output[i] = (lastOut + 0.02 * white) / 1.02;
+            lastOut = output[i];
+            output[i] *= 1.8;
+          }
+          this.brownNode = ctx.createBufferSource();
+          this.brownNode.buffer = noiseBuffer;
+          this.brownNode.loop = true;
+          this.brownGain = ctx.createGain();
+          this.brownGain.gain.setValueAtTime(0.4, ctx.currentTime);
+          this.brownNode.connect(this.brownGain);
+          this.brownGain.connect(ctx.destination);
+          this.brownNode.start();
+          this.active.brown = true;
+          document.getElementById('btnSoundBrown').textContent = 'Pause';
+          document.getElementById('btnSoundBrown').classList.replace('text-amber-300', 'text-rose-400');
+        } else if (type === 'binaural') {
+          // 432 Hz carrier + 4 Hz Delta frequency (436 Hz right)
+          this.binauralOscL = ctx.createOscillator();
+          this.binauralOscR = ctx.createOscillator();
+          this.binauralGain = ctx.createGain();
+          this.binauralGain.gain.setValueAtTime(0.3, ctx.currentTime);
+
+          this.binauralOscL.type = 'sine';
+          this.binauralOscL.frequency.setValueAtTime(432, ctx.currentTime);
+
+          this.binauralOscR.type = 'sine';
+          this.binauralOscR.frequency.setValueAtTime(436, ctx.currentTime);
+
+          const merger = ctx.createChannelMerger(2);
+          this.binauralOscL.connect(merger, 0, 0);
+          this.binauralOscR.connect(merger, 0, 1);
+          merger.connect(this.binauralGain);
+          this.binauralGain.connect(ctx.destination);
+
+          this.binauralOscL.start();
+          this.binauralOscR.start();
+          this.active.binaural = true;
+          document.getElementById('btnSoundBinaural').textContent = 'Pause';
+          document.getElementById('btnSoundBinaural').classList.replace('text-indigo-300', 'text-rose-400');
+        }
+      },
+
+      stopSound(type) {
+        if (type === 'pink' && this.pinkNode) {
+          try { this.pinkNode.stop(); } catch(e){}
+          this.active.pink = false;
+          document.getElementById('btnSoundPink').textContent = 'Play';
+          document.getElementById('btnSoundPink').classList.replace('text-rose-400', 'text-teal-300');
+        } else if (type === 'brown' && this.brownNode) {
+          try { this.brownNode.stop(); } catch(e){}
+          this.active.brown = false;
+          document.getElementById('btnSoundBrown').textContent = 'Play';
+          document.getElementById('btnSoundBrown').classList.replace('text-rose-400', 'text-amber-300');
+        } else if (type === 'binaural' && this.binauralOscL) {
+          try { this.binauralOscL.stop(); this.binauralOscR.stop(); } catch(e){}
+          this.active.binaural = false;
+          document.getElementById('btnSoundBinaural').textContent = 'Play';
+          document.getElementById('btnSoundBinaural').classList.replace('text-rose-400', 'text-indigo-300');
+        }
+      },
+
+      setVolume(type, val) {
+        val = parseFloat(val);
+        const pct = Math.round(val * 100) + '%';
+        if (type === 'pink') {
+          if (this.pinkGain) this.pinkGain.gain.setValueAtTime(val, this.ctx.currentTime);
+          document.getElementById('pinkVolText').textContent = pct;
+        } else if (type === 'brown') {
+          if (this.brownGain) this.brownGain.gain.setValueAtTime(val, this.ctx.currentTime);
+          document.getElementById('brownVolText').textContent = pct;
+        } else if (type === 'binaural') {
+          if (this.binauralGain) this.binauralGain.gain.setValueAtTime(val, this.ctx.currentTime);
+          document.getElementById('binauralVolText').textContent = pct;
+        }
+      }
+    };
+
+    /* =====================================================================
+       4. CHART.JS MANAGER
+       ===================================================================== */
+    const Charts = {
+      instances: {},
+
+      init() {
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+        // 1. Live Monitor: Heart Rate Chart
+        const ctxHr = document.getElementById('chartHeartRate');
+        if (ctxHr) {
+          this.instances.hr = new Chart(ctxHr, {
+            type: 'line',
+            data: {
+              labels: ['10 PM', '11 PM', '12 AM', '01 AM', '02 AM', '03 AM', '04 AM', '05 AM', '06 AM'],
+              datasets: [{
+                label: 'Heart Rate (bpm)',
+                data: [72, 65, 62, 59, 58, 60, 58, 59, 62],
+                borderColor: '#00d4aa',
+                backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: '#00d4aa'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { min: 45, max: 155, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+              }
+            }
+          });
+        }
+
+        // 2. Live Monitor: Mattress Temp Chart
+        const ctxTemp = document.getElementById('chartMattressTemp');
+        if (ctxTemp) {
+          this.instances.temp = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+              labels: ['10 PM', '11 PM', '12 AM', '01 AM', '02 AM', '03 AM', '04 AM', '05 AM', '06 AM'],
+              datasets: [{
+                label: 'Mattress Temp (°C)',
+                data: [25.5, 24.5, 24.0, 23.8, 23.5, 24.0, 23.8, 24.2, 24.8],
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#f59e0b'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { min: 15, max: 35, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+              }
+            }
+          });
+        }
+
+        // 3. Live Monitor: Snoring Level Chart
+        const ctxSnore = document.getElementById('chartSnoring');
+        if (ctxSnore) {
+          this.instances.snore = new Chart(ctxSnore, {
+            type: 'bar',
+            data: {
+              labels: ['10 PM', '11 PM', '12 AM', '01 AM', '02 AM', '03 AM', '04 AM', '05 AM', '06 AM'],
+              datasets: [{
+                label: 'Peak Snoring (dB)',
+                data: [32, 34, 38, 35, 36, 38, 34, 33, 35],
+                backgroundColor: 'rgba(56, 189, 248, 0.65)',
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { min: 20, max: 80, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { grid: { display: false } }
+              }
+            }
+          });
+        }
+
+        // 4. Analytics: Sleep Stages Doughnut Chart
+        const ctxStages = document.getElementById('chartSleepStages');
+        if (ctxStages) {
+          this.instances.stages = new Chart(ctxStages, {
+            type: 'doughnut',
+            data: {
+              labels: ['Deep Sleep', 'REM Sleep', 'Light Sleep', 'Awake'],
+              datasets: [{
+                data: [25, 23, 46, 6],
+                backgroundColor: ['#6366f1', '#00d4aa', '#38bdf8', '#f59e0b'],
+                borderWidth: 0,
+                hoverOffset: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '72%',
+              plugins: { legend: { display: false } }
+            }
+          });
+        }
+
+        // 5. Analytics: 24-Hour Circadian Curve Chart
+        const ctxCirc = document.getElementById('chartCircadianCurve');
+        if (ctxCirc) {
+          this.instances.circadian = new Chart(ctxCirc, {
+            type: 'line',
+            data: {
+              labels: ['12 PM', '3 PM', '6 PM', '9 PM', '12 AM', '3 AM', '6 AM', '9 AM', '12 PM'],
+              datasets: [
+                {
+                  label: 'Core Body Temp (°C)',
+                  data: [37.1, 37.3, 37.2, 36.9, 36.5, 36.2, 36.4, 36.8, 37.1],
+                  borderColor: '#f59e0b',
+                  yAxisID: 'yTemp',
+                  tension: 0.4,
+                  borderWidth: 2,
+                  pointRadius: 2
+                },
+                {
+                  label: 'Melatonin (pg/mL)',
+                  data: [2, 3, 8, 25, 68, 85, 45, 12, 3],
+                  borderColor: '#6366f1',
+                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                  fill: true,
+                  yAxisID: 'yMelatonin',
+                  tension: 0.4,
+                  borderWidth: 2,
+                  pointRadius: 2
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } }
+              },
+              scales: {
+                x: { grid: { display: false } },
+                yTemp: {
+                  type: 'linear',
+                  position: 'left',
+                  min: 35.8,
+                  max: 37.6,
+                  grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                yMelatonin: {
+                  type: 'linear',
+                  position: 'right',
+                  min: 0,
+                  max: 100,
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+
+        // 6. History: 7-Day Trend Chart
+        const ctxHist = document.getElementById('chartHistoryTrend');
+        if (ctxHist) {
+          this.instances.history = new Chart(ctxHist, {
+            type: 'line',
+            data: {
+              labels: ['Oct 24', 'Oct 25', 'Oct 26 (Distress)', 'Oct 27', 'Oct 28', 'Oct 29', 'Oct 30'],
+              datasets: [
+                {
+                  label: 'Sleep Recovery Score',
+                  data: [91, 88, 49, 85, 94, 89, 92],
+                  borderColor: '#00d4aa',
+                  backgroundColor: 'rgba(0, 212, 170, 0.12)',
+                  fill: true,
+                  yAxisID: 'yScore',
+                  tension: 0.35,
+                  borderWidth: 3,
+                  pointRadius: [4, 4, 7, 4, 4, 4, 4],
+                  pointBackgroundColor: ['#00d4aa', '#00d4aa', '#f43f5e', '#00d4aa', '#00d4aa', '#00d4aa', '#00d4aa']
+                },
+                {
+                  label: 'Resting HR (bpm)',
+                  data: [57, 59, 128, 63, 56, 60, 58],
+                  borderColor: '#f43f5e',
+                  borderDash: [5, 5],
+                  yAxisID: 'yHr',
+                  tension: 0.3,
+                  borderWidth: 2,
+                  pointRadius: 4,
+                  pointBackgroundColor: '#f43f5e'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'top', labels: { boxWidth: 14, font: { size: 11 } } }
+              },
+              scales: {
+                x: { grid: { display: false } },
+                yScore: {
+                  type: 'linear',
+                  position: 'left',
+                  min: 30,
+                  max: 100,
+                  grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                yHr: {
+                  type: 'linear',
+                  position: 'right',
+                  min: 40,
+                  max: 140,
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+      },
+
+      updateMode(mode) {
+        if (!this.instances.hr || !this.instances.temp || !this.instances.snore) return;
+
+        if (mode === 'emergency') {
+          // Spike at 03:00 AM
+          this.instances.hr.data.datasets[0].data = [72, 65, 62, 59, 78, 142, 60, 59, 62];
+          this.instances.hr.data.datasets[0].borderColor = '#f43f5e';
+          this.instances.hr.data.datasets[0].pointBackgroundColor = '#f43f5e';
+          this.instances.hr.update();
+
+          this.instances.temp.data.datasets[0].data = [25.5, 24.5, 24.0, 23.8, 26.0, 31.0, 25.0, 24.2, 24.8];
+          this.instances.temp.data.datasets[0].borderColor = '#f43f5e';
+          this.instances.temp.update();
+
+          this.instances.snore.data.datasets[0].data = [32, 34, 38, 35, 48, 63, 36, 33, 35];
+          this.instances.snore.data.datasets[0].backgroundColor = 'rgba(244, 63, 94, 0.8)';
+          this.instances.snore.update();
+        } else if (mode === 'autopilot') {
+          // Stabilization
+          this.instances.hr.data.datasets[0].data = [72, 65, 62, 59, 78, 128, 58, 58, 60];
+          this.instances.hr.data.datasets[0].borderColor = '#6366f1';
+          this.instances.hr.data.datasets[0].pointBackgroundColor = '#6366f1';
+          this.instances.hr.update();
+
+          this.instances.temp.data.datasets[0].data = [25.5, 24.5, 24.0, 23.8, 25.0, 19.0, 19.0, 20.2, 22.0];
+          this.instances.temp.data.datasets[0].borderColor = '#38bdf8';
+          this.instances.temp.update();
+
+          this.instances.snore.data.datasets[0].data = [32, 34, 38, 35, 40, 38, 34, 33, 35];
+          this.instances.snore.data.datasets[0].backgroundColor = 'rgba(99, 102, 241, 0.7)';
+          this.instances.snore.update();
+        } else {
+          // Normal Baseline
+          this.instances.hr.data.datasets[0].data = [72, 65, 62, 59, 58, 60, 58, 59, 62];
+          this.instances.hr.data.datasets[0].borderColor = '#00d4aa';
+          this.instances.hr.data.datasets[0].pointBackgroundColor = '#00d4aa';
+          this.instances.hr.update();
+
+          this.instances.temp.data.datasets[0].data = [25.5, 24.5, 24.0, 23.8, 23.5, 24.0, 23.8, 24.2, 24.8];
+          this.instances.temp.data.datasets[0].borderColor = '#f59e0b';
+          this.instances.temp.update();
+
+          this.instances.snore.data.datasets[0].data = [32, 34, 38, 35, 36, 38, 34, 33, 35];
+          this.instances.snore.data.datasets[0].backgroundColor = 'rgba(56, 189, 248, 0.65)';
+          this.instances.snore.update();
+        }
+      }
+    };
+
+    /* =====================================================================
+       5. FLOATING PRESENTER CONTROL PANEL (BOTTOM-LEFT)
+       ===================================================================== */
+    const FloatingPanel = {
+      isOpen: true,
+
+      init() {
+        const saved = localStorage.getItem('somnisync_presenter_open');
+        this.isOpen = saved !== 'false';
+        this.renderState();
+      },
+
+      open() {
+        this.isOpen = true;
+        localStorage.setItem('somnisync_presenter_open', 'true');
+        this.renderState();
+      },
+
+      close() {
+        this.isOpen = false;
+        localStorage.setItem('somnisync_presenter_open', 'false');
+        this.renderState();
+      },
+
+      renderState() {
+        const expanded = document.getElementById('panelExpanded');
+        const collapsed = document.getElementById('panelCollapsedPill');
+        if (!expanded || !collapsed) return;
+
+        if (this.isOpen) {
+          expanded.classList.remove('hidden');
+          collapsed.classList.add('hidden');
+        } else {
+          expanded.classList.add('hidden');
+          collapsed.classList.remove('hidden');
+        }
+      },
+
+      updateStatus(state, hr) {
+        const dot = document.getElementById('panelStatusDot');
+        const label = document.getElementById('panelStatusLabel');
+        const bpmVal = document.getElementById('panelBpmVal');
+        const pillHr = document.getElementById('panelPillHr');
+        const collapsedHr = document.getElementById('collapsedLiveHr');
+        const expanded = document.getElementById('panelExpanded');
+
+        if (pillHr) pillHr.textContent = `${hr} bpm`;
+        if (collapsedHr) collapsedHr.textContent = `${hr}`;
+        if (bpmVal) bpmVal.textContent = `${hr} BPM`;
+
+        if (state === 'emergency') {
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-500 animate-ping';
+          if (label) {
+            label.textContent = '🚨 DISTRESS TRIGGERED';
+            label.className = 'text-rose-300 font-bold';
+          }
+          if (expanded) expanded.classList.add('panel-emergency-pulse');
+        } else if (state === 'autopilot') {
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-indigo-400';
+          if (label) {
+            label.textContent = 'Auto-Pilot Active';
+            label.className = 'text-indigo-300 font-bold';
+          }
+          if (expanded) expanded.classList.remove('panel-emergency-pulse');
+        } else {
+          if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          if (label) {
+            label.textContent = 'Monitoring Normal';
+            label.className = 'text-slate-300 font-medium';
+          }
+          if (expanded) expanded.classList.remove('panel-emergency-pulse');
+        }
+      },
+
+      showCountdown(remaining) {
+        const box = document.getElementById('panelCountdownBox');
+        const sec = document.getElementById('panelCountdownSec');
+        const bar = document.getElementById('panelCountdownBar');
+        if (box) box.classList.remove('hidden');
+        if (sec) sec.textContent = `${remaining}s`;
+        if (bar) bar.style.width = `${(remaining / 15) * 100}%`;
+      },
+
+      hideCountdown() {
+        const box = document.getElementById('panelCountdownBox');
+        if (box) box.classList.add('hidden');
+      }
+    };
+
+    /* =====================================================================
+       6. THE CORE STATE MACHINE (MOST CRITICAL REQUIREMENT)
+       ===================================================================== */
+    const StateMachine = {
+      currentState: 'normal',
+      timers: [],
+      countdownInterval: null,
+      hrInterval: null,
+      autoDemoStep: 0,
+      autoDemoTimer: null,
+
+      init() {
+        this.startNormal();
+      },
+
+      setState(state) {
+        this.clearAllTimers();
+        this.currentState = state;
+
+        if (state === 'normal') {
+          this.startNormal();
+        } else if (state === 'emergency') {
+          this.startEmergency();
+        } else if (state === 'autopilot') {
+          this.startAutoPilot();
+        } else if (state === 'morning') {
+          this.startMorning();
+        }
+      },
+
+      startNormal() {
+        this.currentState = 'normal';
+        this.clearAllTimers();
+
+        let currentHr = 68;
+
+        this.updateUI({
+          hr: currentHr,
+          temp: 24.0,
+          angle: 0,
+          snoring: 36,
+          bp: '118/76',
+          statusTitle: 'STEP 1 — SENSE: Contactless biometric monitoring active',
+          statusDesc: 'Zero wearables. 60 GHz mmWave radar & piezoceramic sensors continuously track cardiopulmonary metrics.',
+          clockMode: 'live',
+          bedStageClass: 'bed-stage-normal',
+          chartMode: 'normal',
+          heatWaves: false,
+          coolParticles: false,
+          sweat: false,
+          isEmergency: false
+        });
+
+        // Fluctuates HR every 3 seconds: 65-75 bpm
+        this.hrInterval = setInterval(() => {
+          if (this.currentState !== 'normal') return;
+          currentHr = 65 + Math.floor(Math.random() * 11);
+          document.getElementById('bedLiveHr').textContent = `${currentHr} bpm`;
+          FloatingPanel.updateStatus('normal', currentHr);
+        }, 3000);
+      },
+
+      startEmergency() {
+        this.currentState = 'emergency';
+        this.clearAllTimers();
+
+        // Requirement: In emergency, panel auto-opens if closed!
+        FloatingPanel.open();
+
+        let currentHr = 138;
+
+        this.updateUI({
+          hr: currentHr,
+          temp: 31.0,
+          tempSub: 'Thermal Surge (Rising)',
+          angle: 0,
+          snoring: 63,
+          snoreSub: 'Severe Airway Obstruction',
+          bp: '160/100 (Rising)',
+          statusTitle: '⚠️ CRITICAL — 03:00 AM NOCTURNAL DISTRESS DETECTED',
+          statusDesc: 'Tachycardia spike & blood pressure surge indicate acute ischemic distress. Intervention initiated.',
+          clockMode: '03:00 AM',
+          bedStageClass: 'bed-stage-emergency',
+          chartMode: 'emergency',
+          heatWaves: true,
+          coolParticles: false,
+          sweat: true,
+          isEmergency: true
+        });
+
+        // 1. Play 3-beep alarm sound via Web Audio API
+        AudioEngine.playAlarmBeep();
+
+        // 2. Show toast
+        Toast.show('🚨 CRITICAL: HR 142 bpm, Stroke Risk HIGH!', 'error');
+
+        // 3. HR randomly fluctuates 130–145 bpm in emergency
+        this.hrInterval = setInterval(() => {
+          if (this.currentState !== 'emergency') return;
+          currentHr = 130 + Math.floor(Math.random() * 16);
+          document.getElementById('bedLiveHr').textContent = `${currentHr} bpm`;
+          FloatingPanel.updateStatus('emergency', currentHr);
+        }, 1500);
+
+        // 4. 15-second countdown timer
+        let remaining = 15;
+        this.updateCountdownDisplays(remaining);
+
+        this.countdownInterval = setInterval(() => {
+          remaining--;
+          if (remaining > 0) {
+            this.updateCountdownDisplays(remaining);
+            if (remaining % 3 === 0) {
+              AudioEngine.playShortBeep(780, 0.1);
+            }
+          } else {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+            // After 15s if not cancelled: trigger auto-pilot automatically!
+            this.setState('autopilot');
+          }
+        }, 1000);
+      },
+
+      startAutoPilot() {
+        this.currentState = 'autopilot';
+        this.clearAllTimers();
+
+        Toast.show('🤖 Auto-Pilot: Bed adjusted, HR stabilizing...', 'info');
+
+        // Initial setup for Auto-Pilot
+        this.updateUI({
+          hr: 128,
+          temp: 31.0,
+          angle: 12,
+          snoring: 38,
+          snoreSub: 'Airway Re-Opened (&lt;40 dB)',
+          bp: '116/75 (Stabilized)',
+          statusTitle: '✅ AUTO-PILOT ACTIVE — Mattress cooled to 19°C, Head elevated 12°',
+          statusDesc: 'Neuroprotection protocol active: CMRO₂ reduced by 22%, intracranial venous drainage restored.',
+          clockMode: '03:05 AM',
+          bedStageClass: 'bed-stage-autopilot',
+          chartMode: 'autopilot',
+          heatWaves: false,
+          coolParticles: true,
+          sweat: false,
+          isEmergency: false
+        });
+
+        // Animate temperature from 31 → 19°C and HR from 128 → 58 bpm over 3 seconds
+        let currentTemp = 31.0;
+        const targetTemp = 19.0;
+        let startHr = 128;
+        const targetHr = 58;
+        const steps = 30;
+        let currentStep = 0;
+
+        const animTimer = setInterval(() => {
+          currentStep++;
+          const factor = currentStep / steps;
+          const interpTemp = (currentTemp - (currentTemp - targetTemp) * factor).toFixed(1);
+          const interpHr = Math.round(startHr - (startHr - targetHr) * factor);
+
+          document.getElementById('bedLiveTemp').textContent = `${interpTemp} °C`;
+          document.getElementById('tempSliderVal').textContent = `${interpTemp}°C`;
+          document.getElementById('tempSlider').value = interpTemp;
+
+          document.getElementById('bedLiveHr').textContent = `${interpHr} bpm`;
+          FloatingPanel.updateStatus('autopilot', interpHr);
+
+          if (currentStep >= steps) {
+            clearInterval(animTimer);
+            document.getElementById('bedLiveTempSub').textContent = '19.0°C Neuroprotection Active';
+            document.getElementById('bedLiveHrSub').textContent = 'Stabilized Sinus (58 bpm)';
+          }
+        }, 100);
+
+        this.timers.push(animTimer);
+      },
+
+      startMorning() {
+        this.currentState = 'morning';
+        this.clearAllTimers();
+
+        this.updateUI({
+          hr: 58,
+          temp: 19.0,
+          angle: 12,
+          snoring: 36,
+          bp: '116/75',
+          statusTitle: '🌅 Sleep Score 92/100 — Heart Safe — Deep Sleep Optimal',
+          statusDesc: 'Nocturnal ischemic distress successfully intercepted at 03:00 AM. 0 myocardial injury detected.',
+          clockMode: '06:30 AM',
+          bedStageClass: 'bed-stage-morning',
+          chartMode: 'normal',
+          heatWaves: false,
+          coolParticles: false,
+          sweat: false,
+          isEmergency: false
+        });
+
+        // Show smartphone modal overlay with 92/100 score ring
+        const phoneModal = document.getElementById('morningPhoneModal');
+        if (phoneModal) phoneModal.classList.remove('hidden');
+
+        // Confetti Fireworks via canvas-confetti
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 70,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            });
+            confetti({
+              particleCount: 70,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            });
+          }, 350);
+        }
+
+        Toast.show('✨ Excellent night! 92/100 Heart Safe', 'success');
+      },
+
+      cancelEmergency() {
+        this.clearAllTimers();
+        Toast.show('Emergency countdown aborted by user.', 'warning');
+        this.setState('normal');
+      },
+
+      startAutoDemo() {
+        this.clearAllTimers();
+        Toast.show('Starting Demo Script: Step 1 → Distress → Auto-Pilot → Morning', 'info');
+
+        // Step 1: Normal
+        this.setState('normal');
+
+        // After 4s: Emergency
+        this.autoDemoTimer = setTimeout(() => {
+          this.setState('emergency');
+
+          // After 7s: Auto-Pilot
+          this.autoDemoTimer = setTimeout(() => {
+            this.setState('autopilot');
+
+            // After 5s: Morning
+            this.autoDemoTimer = setTimeout(() => {
+              this.setState('morning');
+            }, 5000);
+
+          }, 7000);
+
+        }, 4000);
+      },
+
+      updateCountdownDisplays(sec) {
+        // Main top status bar
+        const statusBarCountdown = document.getElementById('statusBarCountdown');
+        const statusBarProgress = document.getElementById('statusBarProgress');
+        if (statusBarCountdown) statusBarCountdown.textContent = sec;
+        if (statusBarProgress) statusBarProgress.style.width = `${(sec / 15) * 100}%`;
+
+        // Floating presenter panel
+        FloatingPanel.showCountdown(sec);
+      },
+
+      updateUI(params) {
+        // Telemetry cards
+        if (params.hr !== undefined) document.getElementById('bedLiveHr').textContent = `${params.hr} bpm`;
+        if (params.temp !== undefined) {
+          document.getElementById('bedLiveTemp').textContent = `${params.temp.toFixed(1)} °C`;
+          document.getElementById('tempSlider').value = params.temp;
+          document.getElementById('tempSliderVal').textContent = `${params.temp.toFixed(1)}°C`;
+        }
+        if (params.tempSub) document.getElementById('bedLiveTempSub').textContent = params.tempSub;
+        if (params.snoring !== undefined) document.getElementById('bedLiveSnoring').textContent = `${params.snoring} dB`;
+        if (params.snoreSub) document.getElementById('bedLiveSnoringSub').textContent = params.snoreSub;
+        if (params.bp) document.getElementById('bedLiveBp').textContent = `BP: ${params.bp}`;
+
+        // Top Status Bar
+        if (params.statusTitle) document.getElementById('bannerStatusTitle').textContent = params.statusTitle;
+        if (params.statusDesc) document.getElementById('bannerStatusDesc').textContent = params.statusDesc;
+
+        // Emergency status bar toggle
+        const emergencyBar = document.getElementById('emergencyStatusBar');
+        if (emergencyBar) {
+          if (params.isEmergency) {
+            emergencyBar.classList.remove('hidden');
+          } else {
+            emergencyBar.classList.add('hidden');
+            FloatingPanel.hideCountdown();
+          }
+        }
+
+        // Bed Stage class
+        const bedStage = document.getElementById('somniBedStage');
+        if (bedStage && params.bedStageClass) {
+          bedStage.className = `lg:col-span-8 glass-card p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-white/10 ${params.bedStageClass}`;
+        }
+
+        // Clock display
+        const bannerClock = document.getElementById('bannerClockDisplay');
+        if (bannerClock) {
+          if (params.clockMode === 'live') {
+            bannerClock.dataset.mode = 'live';
+          } else {
+            bannerClock.dataset.mode = 'frozen';
+            bannerClock.textContent = params.clockMode;
+          }
+        }
+
+        // SVG Head Lift & Actuator
+        if (params.angle !== undefined) {
+          MattressControls.setAngle(params.angle, false);
+        }
+
+        // SVG Visual Elements
+        const heatGroup = document.getElementById('svgHeatWaves');
+        const coolGroup = document.getElementById('svgCoolParticles');
+        const sweatGroup = document.getElementById('svgDistressSweat');
+        const snoreText = document.getElementById('svgSnoreText');
+
+        if (heatGroup) heatGroup.classList.toggle('hidden', !params.heatWaves);
+        if (coolGroup) coolGroup.classList.toggle('hidden', !params.coolParticles);
+        if (sweatGroup) sweatGroup.classList.toggle('hidden', !params.sweat);
+        if (snoreText) {
+          snoreText.textContent = params.isEmergency ? '⚠️' : 'Zzz';
+          snoreText.setAttribute('fill', params.isEmergency ? '#f43f5e' : '#a78bfa');
+        }
+
+        // Charts update
+        if (params.chartMode) {
+          Charts.updateMode(params.chartMode);
+        }
+
+        // Floating Panel Update
+        FloatingPanel.updateStatus(this.currentState, params.hr);
+      },
+
+      clearAllTimers() {
+        if (this.countdownInterval) {
+          clearInterval(this.countdownInterval);
+          this.countdownInterval = null;
+        }
+        if (this.hrInterval) {
+          clearInterval(this.hrInterval);
+          this.hrInterval = null;
+        }
+        if (this.autoDemoTimer) {
+          clearTimeout(this.autoDemoTimer);
+          this.autoDemoTimer = null;
+        }
+        this.timers.forEach(t => clearInterval(t));
+        this.timers = [];
+      }
+    };
+
+    /* =====================================================================
+       7. MATTRESS CONTROLS HANDLER
+       ===================================================================== */
+    const MattressControls = {
+      setTemp(val) {
+        val = parseFloat(val);
+        document.getElementById('tempSlider').value = val;
+        document.getElementById('tempSliderVal').textContent = `${val.toFixed(1)}°C`;
+        document.getElementById('bedLiveTemp').textContent = `${val.toFixed(1)} °C`;
+
+        const heatWaves = document.getElementById('svgHeatWaves');
+        const coolParticles = document.getElementById('svgCoolParticles');
+        const hydroDot = document.getElementById('hydroStatusDot');
+        const hydroText = document.getElementById('hydroStatusText');
+
+        if (val > 27) {
+          if (heatWaves) heatWaves.classList.remove('hidden');
+          if (coolParticles) coolParticles.classList.add('hidden');
+          if (hydroDot) hydroDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+          if (hydroText) hydroText.textContent = `Heating (${val.toFixed(1)}°C)`;
+        } else if (val < 22) {
+          if (heatWaves) heatWaves.classList.add('hidden');
+          if (coolParticles) coolParticles.classList.remove('hidden');
+          if (hydroDot) hydroDot.className = 'w-2 h-2 rounded-full bg-sky-400';
+          if (hydroText) hydroText.textContent = `Cooling (${val.toFixed(1)}°C)`;
+        } else {
+          if (heatWaves) heatWaves.classList.add('hidden');
+          if (coolParticles) coolParticles.classList.add('hidden');
+          if (hydroDot) hydroDot.className = 'w-2 h-2 rounded-full bg-teal-400';
+          if (hydroText) hydroText.textContent = `Neutral (${val.toFixed(1)}°C)`;
+        }
+      },
+
+      setAngle(angle, updateSlider = true) {
+        angle = parseInt(angle, 10);
+        if (updateSlider) {
+          document.getElementById('angleSlider').value = angle;
+        }
+        document.getElementById('angleSliderVal').textContent = `${angle}°`;
+
+        // SVG's y-axis points down, so a positive rotation lifts the left/head end.
+        const headGroup = document.getElementById('svgHeadLiftGroup');
+        if (headGroup) {
+          headGroup.style.transform = `rotate(${angle}deg)`;
+        }
+
+        const actuatorDot = document.getElementById('actuatorStatusDot');
+        const actuatorText = document.getElementById('actuatorStatusText');
+        if (actuatorText) {
+          actuatorText.textContent = `${angle}° (${angle === 0 ? 'Flat' : angle <= 6 ? 'Anti-Snore' : 'Stroke Guard'})`;
+        }
+        if (actuatorDot) {
+          actuatorDot.className = angle > 0 ? 'w-2 h-2 rounded-full bg-indigo-400 animate-pulse' : 'w-2 h-2 rounded-full bg-slate-400';
+        }
+      }
+    };
+
+    /* =====================================================================
+       8. BREATHING COACH CONTROLLER
+       ===================================================================== */
+    const BreathingCoach = {
+      active: false,
+      mode: '4-7-8',
+      timer: null,
+      cycleCount: 0,
+      stepSeconds: 0,
+
+      setMode(m) {
+        this.mode = m;
+        this.reset();
+      },
+
+      toggle() {
+        if (this.active) {
+          this.stop();
+        } else {
+          this.start();
+        }
+      },
+
+      start() {
+        this.active = true;
+        this.cycleCount = 0;
+        document.getElementById('breathBtnToggle').textContent = 'Pause Session';
+        document.getElementById('breathBtnToggle').classList.replace('bg-teal-400', 'bg-rose-500');
+        this.runCycle();
+      },
+
+      stop() {
+        this.active = false;
+        clearTimeout(this.timer);
+        document.getElementById('breathBtnToggle').textContent = 'Start Session';
+        document.getElementById('breathBtnToggle').classList.replace('bg-rose-500', 'bg-teal-400');
+        document.getElementById('breathPhaseText').textContent = 'Paused';
+        document.getElementById('breathCircle').style.transform = 'scale(1)';
+      },
+
+      reset() {
+        this.stop();
+        this.cycleCount = 0;
+        document.getElementById('breathCycleCounter').textContent = 'Cycles: 0 / 8';
+        document.getElementById('breathSecondsText').textContent = '--';
+        document.getElementById('breathPhaseText').textContent = 'Ready';
+        document.getElementById('breathInstructionText').textContent = 'Select mode and press Start to begin.';
+      },
+
+      runCycle() {
+        if (!this.active) return;
+        this.cycleCount++;
+        document.getElementById('breathCycleCounter').textContent = `Cycles: ${this.cycleCount} / 8`;
+
+        if (this.mode === '4-7-8') {
+          // Inhale 4s -> Hold 7s -> Exhale 8s
+          this.step('Inhale', 4, 1.45, () => {
+            this.step('Hold', 7, 1.45, () => {
+              this.step('Exhale', 8, 0.9, () => {
+                this.runCycle();
+              });
+            });
+          });
+        } else if (this.mode === 'box') {
+          // Box 4-4-4-4
+          this.step('Inhale', 4, 1.4, () => {
+            this.step('Hold', 4, 1.4, () => {
+              this.step('Exhale', 4, 0.9, () => {
+                this.step('Hold', 4, 0.9, () => {
+                  this.runCycle();
+                });
+              });
+            });
+          });
+        } else {
+          // 0.1 Hz HRV (5.5s Inhale -> 5.5s Exhale)
+          this.step('Inhale', 5.5, 1.4, () => {
+            this.step('Exhale', 5.5, 0.95, () => {
+              this.runCycle();
+            });
+          });
+        }
+      },
+
+      step(phaseName, durationSec, scaleFactor, onComplete) {
+        if (!this.active) return;
+        const circle = document.getElementById('breathCircle');
+        const phaseText = document.getElementById('breathPhaseText');
+        const secText = document.getElementById('breathSecondsText');
+        const promptText = document.getElementById('breathInstructionText');
+
+        phaseText.textContent = phaseName;
+        circle.style.transform = `scale(${scaleFactor})`;
+
+        if (phaseName === 'Inhale') {
+          promptText.textContent = 'Breathe in slowly through your nose, expanding diaphragm...';
+          AudioEngine.playShortBeep(380, 0.08);
+        } else if (phaseName === 'Hold') {
+          promptText.textContent = 'Gently hold breath, keeping shoulders relaxed...';
+        } else {
+          promptText.textContent = 'Exhale completely through your mouth with a soft whoosh...';
+          AudioEngine.playShortBeep(260, 0.08);
+        }
+
+        let remaining = Math.round(durationSec);
+        secText.textContent = remaining;
+
+        const countInterval = setInterval(() => {
+          if (!this.active) {
+            clearInterval(countInterval);
+            return;
+          }
+          remaining--;
+          if (remaining >= 1) {
+            secText.textContent = remaining;
+          } else {
+            clearInterval(countInterval);
+          }
+        }, 1000);
+
+        this.timer = setTimeout(() => {
+          clearInterval(countInterval);
+          if (this.active) onComplete();
+        }, durationSec * 1000);
+      }
+    };
+
+    /* =====================================================================
+       9. 90-MINUTE SLEEP CYCLE CALCULATOR
+       ===================================================================== */
+    const SleepCalculator = {
+      calculate() {
+        const input = document.getElementById('cycleWakeInput');
+        const container = document.getElementById('cycleResultsContainer');
+        if (!input || !container) return;
+
+        const [wakeHour, wakeMin] = input.value.split(':').map(Number);
+        const wakeDate = new Date();
+        wakeDate.setHours(wakeHour, wakeMin, 0, 0);
+
+        // 90 minutes = 5400000 ms, plus 14 min average latency = 840000 ms
+        const latencyMs = 14 * 60 * 1000;
+        const cycleMs = 90 * 60 * 1000;
+
+        const cycles = [
+          { count: 6, label: 'Supercharged (9h 00m)', tag: '6 Cycles', color: 'border-teal-500/40 text-teal-300' },
+          { count: 5, label: 'Optimal Recovery (7h 30m)', tag: '5 Cycles', color: 'border-emerald-500/40 text-emerald-300', recommended: true },
+          { count: 4, label: 'Minimum Recharging (6h 00m)', tag: '4 Cycles', color: 'border-indigo-500/40 text-indigo-300' }
+        ];
+
+        let html = '';
+        cycles.forEach(c => {
+          const bedTime = new Date(wakeDate.getTime() - (c.count * cycleMs) - latencyMs);
+          const hours = bedTime.getHours();
+          const mins = bedTime.getMinutes();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const formattedHours = hours % 12 || 12;
+          const formattedMins = mins < 10 ? '0' + mins : mins;
+          const timeStr = `${formattedHours}:${formattedMins} ${ampm}`;
+
+          html += `
+            <div class="glass-subcard p-3 border ${c.color} flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-black text-white font-mono">${timeStr}</span>
+                  ${c.recommended ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-teal-500/20 text-teal-300 border border-teal-500/40 uppercase">Optimal</span>' : ''}
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">${c.label}</div>
+              </div>
+              <span class="px-2 py-1 rounded-lg bg-white/[0.04] text-[10px] font-mono font-bold text-slate-300">${c.tag}</span>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }
+    };
+
+    /* =====================================================================
+       10. SLEEP HYGIENE CHECKLIST
+       ===================================================================== */
+    const SleepHygiene = {
+      update() {
+        const checkboxes = document.querySelectorAll('#tab-sleep-lab input[type="checkbox"]');
+        const checked = Array.from(checkboxes).filter(c => c.checked).length;
+        const total = checkboxes.length;
+        const pct = Math.round((checked / total) * 100);
+
+        const badge = document.getElementById('hygieneScoreBadge');
+        const bar = document.getElementById('hygieneProgressBar');
+
+        if (badge) badge.textContent = `${checked} / ${total} Done`;
+        if (bar) bar.style.width = `${pct}%`;
+
+        if (checked === total) {
+          Toast.show('🌟 Sanctuary Score: 100% Prepared for Rest!', 'success');
+        }
+      }
+    };
+
+    /* =====================================================================
+       11. NAVIGATION & CLOCK MANAGER
+       ===================================================================== */
+    const App = {
+      switchTab(tabId) {
+        document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-nav-btn').forEach(el => el.classList.remove('active'));
+
+        const targetPane = document.getElementById(`tab-${tabId}`);
+        const targetBtn = document.querySelector(`[data-tab="${tabId}"]`);
+
+        if (targetPane) targetPane.classList.add('active');
+        if (targetBtn) targetBtn.classList.add('active');
+
+        // Resize charts when tab becomes visible
+        setTimeout(() => {
+          Object.values(Charts.instances).forEach(chart => {
+            if (chart && typeof chart.resize === 'function') {
+              chart.resize();
+            }
+          });
+        }, 150);
+      },
+
+      initLiveClock() {
+        const navClock = document.getElementById('navLiveClock');
+        const bannerClock = document.getElementById('bannerClockDisplay');
+
+        setInterval(() => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const bannerTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          if (navClock) navClock.textContent = timeStr;
+          if (bannerClock && bannerClock.dataset.mode === 'live') {
+            bannerClock.textContent = bannerTimeStr;
+          }
+        }, 1000);
+      }
+    };
+
+    /* =====================================================================
+       12. INITIALIZATION
+       ===================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      Ambient3D.init();
+      Charts.init();
+      FloatingPanel.init();
+      StateMachine.init();
+      SleepCalculator.calculate();
+      App.initLiveClock();
+    });
+  </script>
+</body>
+</html>
