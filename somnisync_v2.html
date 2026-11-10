@@ -1655,6 +1655,7 @@
       lastFrame: 0,
       nextMeteorAt: 0,
       stars: [],
+      milkyWayDust: [],
       asteroids: [],
       nebulae: [],
       constellations: [],
@@ -1707,7 +1708,7 @@
         this.motionQuery.addEventListener('change', this.motionHandler);
         this.resize();
         this.elapsed = 0;
-        this.nextMeteorAt = this.random(4, 9);
+        this.nextMeteorAt = this.random(2, 4);
         if (this.reducedMotion) this.drawFrame(0, false);
         else if (!document.hidden) this.run();
       },
@@ -1740,6 +1741,17 @@
           phase: this.random(0, Math.PI * 2),
           speed: this.random(0.12, 0.5),
           color: Math.random() < 0.65 ? '210, 224, 255' : '142, 181, 255'
+        }));
+        const galaxySpan = Math.hypot(this.width, this.height) * 1.2;
+        const galaxyWidth = Math.min(150, this.height * 0.2);
+        this.milkyWayDust = Array.from({ length: 110 }, () => ({
+          x: this.random(-galaxySpan * 0.5, galaxySpan * 0.5),
+          y: this.random(-galaxyWidth, galaxyWidth),
+          radius: this.random(0.35, 1.05),
+          alpha: this.random(0.08, 0.22),
+          phase: this.random(0, Math.PI * 2),
+          speed: this.random(0.18, 0.55),
+          color: Math.random() < 0.5 ? '179, 205, 255' : '199, 171, 255'
         }));
         this.asteroids = Array.from({ length: 18 }, () => ({
           x: this.random(0, this.width),
@@ -1805,6 +1817,7 @@
         if (!ctx) return;
         ctx.clearRect(0, 0, this.width, this.height);
         this.drawStars(time, animate);
+        this.drawMilkyWay(time, animate);
         this.drawGalaxy(time, animate);
         this.drawSolarSystem(time, animate);
         this.drawNebulae(time, animate);
@@ -1822,6 +1835,41 @@
           ctx.arc(star.x * this.width, star.y * this.height, star.radius, 0, Math.PI * 2);
           ctx.fill();
         });
+      },
+
+      drawMilkyWay(time, animate) {
+        const ctx = this.ctx;
+        const span = Math.hypot(this.width, this.height) * 1.2;
+        const band = Math.min(150, this.height * 0.2);
+        ctx.save();
+        ctx.translate(this.width * 0.52, this.height * 0.48);
+        ctx.rotate(-0.48);
+        ctx.globalCompositeOperation = 'screen';
+
+        const haze = ctx.createLinearGradient(0, -band, 0, band);
+        haze.addColorStop(0, 'rgba(77, 115, 214, 0)');
+        haze.addColorStop(0.32, 'rgba(93, 119, 213, 0.018)');
+        haze.addColorStop(0.5, 'rgba(167, 174, 255, 0.045)');
+        haze.addColorStop(0.68, 'rgba(104, 119, 211, 0.022)');
+        haze.addColorStop(1, 'rgba(77, 115, 214, 0)');
+        ctx.fillStyle = haze;
+        ctx.fillRect(-span * 0.6, -band, span * 1.2, band * 2);
+
+        const core = ctx.createLinearGradient(0, -band * 0.24, 0, band * 0.24);
+        core.addColorStop(0, 'rgba(161, 174, 255, 0)');
+        core.addColorStop(0.5, 'rgba(188, 193, 255, 0.032)');
+        core.addColorStop(1, 'rgba(161, 174, 255, 0)');
+        ctx.fillStyle = core;
+        ctx.fillRect(-span * 0.6, -band * 0.24, span * 1.2, band * 0.48);
+
+        this.milkyWayDust.forEach(particle => {
+          const shimmer = animate ? 0.72 + Math.sin(time * particle.speed + particle.phase) * 0.28 : 0.82;
+          ctx.fillStyle = `rgba(${particle.color}, ${particle.alpha * shimmer})`;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
       },
 
       drawGalaxy(time, animate) {
@@ -1846,12 +1894,12 @@
             if (i === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
-          ctx.strokeStyle = 'rgba(154, 174, 255, 0.065)';
-          ctx.lineWidth = 1.1;
+          ctx.strokeStyle = 'rgba(165, 184, 255, 0.095)';
+          ctx.lineWidth = 1.25;
           ctx.stroke();
         }
         const core = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.3);
-        core.addColorStop(0, 'rgba(220, 226, 255, 0.11)');
+        core.addColorStop(0, 'rgba(220, 226, 255, 0.15)');
         core.addColorStop(1, 'rgba(129, 140, 248, 0)');
         ctx.fillStyle = core;
         ctx.beginPath();
@@ -1995,8 +2043,8 @@
           ctx.scale(1.7, 0.72);
           ctx.globalCompositeOperation = 'screen';
           const cloud = ctx.createRadialGradient(0, 0, radius * 0.04, 0, 0, radius);
-          cloud.addColorStop(0, `rgba(${nebula.color}, 0.042)`);
-          cloud.addColorStop(0.42, `rgba(${nebula.color}, 0.022)`);
+          cloud.addColorStop(0, `rgba(${nebula.color}, 0.075)`);
+          cloud.addColorStop(0.42, `rgba(${nebula.color}, 0.038)`);
           cloud.addColorStop(1, `rgba(${nebula.color}, 0)`);
           ctx.fillStyle = cloud;
           ctx.beginPath();
@@ -2014,8 +2062,8 @@
             y: (constellation.y + y * constellation.scale) * this.height
           }));
           ctx.save();
-          ctx.strokeStyle = 'rgba(132, 178, 237, 0.11)';
-          ctx.lineWidth = 0.7;
+          ctx.strokeStyle = 'rgba(150, 193, 255, 0.17)';
+          ctx.lineWidth = 0.85;
           constellation.links.forEach(([start, end]) => {
             ctx.beginPath();
             ctx.moveTo(points[start].x, points[start].y);
@@ -2023,9 +2071,9 @@
             ctx.stroke();
           });
           points.forEach(point => {
-            ctx.fillStyle = 'rgba(178, 211, 255, 0.22)';
+            ctx.fillStyle = 'rgba(190, 219, 255, 0.3)';
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 1.1, 0, Math.PI * 2);
+            ctx.arc(point.x, point.y, 1.25, 0, Math.PI * 2);
             ctx.fill();
           });
           ctx.restore();
@@ -2036,25 +2084,25 @@
         const ctx = this.ctx;
         if (!animate) return;
         if (time >= this.nextMeteorAt) {
-          const burstCount = Math.random() < 0.24 ? 2 : 1;
+          const burstCount = Math.random() < 0.28 ? 2 : 1;
           for (let i = 0; i < burstCount; i++) {
             this.meteors.push({
               x: this.random(this.width * 0.2, this.width),
               y: this.random(0, this.height * 0.62),
               age: 0,
-              duration: this.random(0.7, 1.15),
-              length: this.random(70, 135),
-              speed: this.random(560, 850),
+              duration: this.random(0.8, 1.25),
+              length: this.random(85, 165),
+              speed: this.random(640, 920),
               angle: this.random(Math.PI * 0.68, Math.PI * 0.82)
             });
           }
-          this.nextMeteorAt = time + this.random(1.8, 3.4);
+          this.nextMeteorAt = time + this.random(1.35, 2.7);
         }
         this.meteors = this.meteors.filter(meteor => meteor.age < meteor.duration);
         this.meteors.forEach(meteor => {
           meteor.age += delta;
           const progress = Math.min(1, meteor.age / meteor.duration);
-          const opacity = Math.sin(progress * Math.PI) * 0.24;
+          const opacity = Math.sin(progress * Math.PI) * 0.34;
           const dx = Math.cos(meteor.angle);
           const dy = Math.sin(meteor.angle);
           meteor.x += dx * meteor.speed * delta;
@@ -2073,6 +2121,10 @@
           ctx.moveTo(meteor.x - dx * meteor.length, meteor.y - dy * meteor.length);
           ctx.lineTo(meteor.x, meteor.y);
           ctx.stroke();
+          ctx.fillStyle = `rgba(224, 237, 255, ${opacity})`;
+          ctx.beginPath();
+          ctx.arc(meteor.x, meteor.y, 1.35, 0, Math.PI * 2);
+          ctx.fill();
           ctx.shadowBlur = 0;
         });
       }
