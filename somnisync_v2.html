@@ -1656,6 +1656,8 @@
       nextMeteorAt: 0,
       stars: [],
       asteroids: [],
+      nebulae: [],
+      constellations: [],
       meteors: [],
       started: false,
       reducedMotion: false,
@@ -1749,6 +1751,15 @@
           phase: this.random(0, Math.PI * 2),
           vertices: Array.from({ length: 7 }, () => this.random(0.68, 1.18))
         }));
+        this.nebulae = [
+          { x: 0.34, y: 0.28, color: '112, 116, 255', phase: 0.2 },
+          { x: 0.76, y: 0.63, color: '53, 166, 207', phase: 2.4 },
+          { x: 0.43, y: 0.84, color: '171, 95, 205', phase: 4.1 }
+        ];
+        this.constellations = [
+          { x: 0.11, y: 0.26, scale: 0.82, points: [[0, 0], [0.09, 0.12], [0.2, 0.06], [0.29, 0.19], [0.4, 0.14]], links: [[0, 1], [1, 2], [2, 3], [3, 4]] },
+          { x: 0.57, y: 0.24, scale: 0.68, points: [[0, 0.1], [0.12, 0], [0.2, 0.14], [0.33, 0.06]], links: [[0, 1], [1, 2], [2, 3]] }
+        ];
         if (this.reducedMotion) this.drawFrame(0, false);
       },
 
@@ -1796,6 +1807,8 @@
         this.drawStars(time, animate);
         this.drawGalaxy(time, animate);
         this.drawSolarSystem(time, animate);
+        this.drawNebulae(time, animate);
+        this.drawConstellations();
         this.drawAsteroids(time, animate, delta);
         this.drawMeteors(time, animate, delta);
       },
@@ -1965,6 +1978,56 @@
           ctx.strokeStyle = 'rgba(192, 207, 240, 0.11)';
           ctx.lineWidth = 0.6;
           ctx.stroke();
+          ctx.restore();
+        });
+      },
+
+      drawNebulae(time, animate) {
+        const ctx = this.ctx;
+        this.nebulae.forEach((nebula, index) => {
+          const drift = animate ? Math.sin(time * 0.025 + nebula.phase) : 0;
+          const radius = Math.min(230, this.width * 0.3, this.height * 0.42);
+          const x = this.width * nebula.x + drift * 10;
+          const y = this.height * nebula.y + drift * 6;
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(-0.35 + index * 0.48);
+          ctx.scale(1.7, 0.72);
+          ctx.globalCompositeOperation = 'screen';
+          const cloud = ctx.createRadialGradient(0, 0, radius * 0.04, 0, 0, radius);
+          cloud.addColorStop(0, `rgba(${nebula.color}, 0.042)`);
+          cloud.addColorStop(0.42, `rgba(${nebula.color}, 0.022)`);
+          cloud.addColorStop(1, `rgba(${nebula.color}, 0)`);
+          ctx.fillStyle = cloud;
+          ctx.beginPath();
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      },
+
+      drawConstellations() {
+        const ctx = this.ctx;
+        this.constellations.forEach(constellation => {
+          const points = constellation.points.map(([x, y]) => ({
+            x: (constellation.x + x * constellation.scale) * this.width,
+            y: (constellation.y + y * constellation.scale) * this.height
+          }));
+          ctx.save();
+          ctx.strokeStyle = 'rgba(132, 178, 237, 0.11)';
+          ctx.lineWidth = 0.7;
+          constellation.links.forEach(([start, end]) => {
+            ctx.beginPath();
+            ctx.moveTo(points[start].x, points[start].y);
+            ctx.lineTo(points[end].x, points[end].y);
+            ctx.stroke();
+          });
+          points.forEach(point => {
+            ctx.fillStyle = 'rgba(178, 211, 255, 0.22)';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          });
           ctx.restore();
         });
       },
