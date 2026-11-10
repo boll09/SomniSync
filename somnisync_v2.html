@@ -232,13 +232,28 @@
         box-shadow: 0 0 45px rgba(244, 63, 94, 0.85);
       }
     }
+
+    #spaceBackgroundCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      z-index: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #spaceBackgroundCanvas {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 
 <body class="relative text-slate-100 min-h-screen pb-16 selection:bg-teal-400 selection:text-night-950">
 
-  <!-- Ambient Three.js 3D Background Canvas -->
-  <div id="threeBackgroundContainer" class="fixed inset-0 pointer-events-none -z-10 opacity-55"></div>
+  <canvas id="spaceBackgroundCanvas" aria-hidden="true"></canvas>
 
   <!-- Ambient Circadian Aura Glows -->
   <div class="fixed top-0 left-1/4 w-[600px] h-[350px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
@@ -1627,148 +1642,375 @@
     };
 
     /* =====================================================================
-       2. THREE.JS 3D AMBIENT SNOWFLAKE GALAXY
+       2. LIGHTWEIGHT CANVAS SPACE BACKGROUND
        ===================================================================== */
-    const Ambient3D = {
-      createSnowflakeTexture() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 96;
-        canvas.height = 96;
-        const ctx = canvas.getContext('2d');
+    const SpaceBackground = {
+      canvas: null,
+      ctx: null,
+      width: 0,
+      height: 0,
+      dpr: 1,
+      rafId: 0,
+      elapsed: 0,
+      lastFrame: 0,
+      nextMeteorAt: 0,
+      stars: [],
+      asteroids: [],
+      meteors: [],
+      started: false,
+      reducedMotion: false,
+      motionQuery: null,
+      resizeHandler: null,
+      visibilityHandler: null,
+      motionHandler: null,
 
-        ctx.strokeStyle = 'rgba(238, 253, 255, 0.92)';
-        ctx.lineWidth = 2.4;
-        ctx.lineCap = 'round';
-        ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
-        ctx.shadowBlur = 7;
-
-        const cx = 48, cy = 48, r = 37;
-
-        // 6 crystal arms
-        for (let i = 0; i < 6; i++) {
-          const angle = (i * Math.PI) / 3;
-          const cos = Math.cos(angle);
-          const sin = Math.sin(angle);
-
-          // Main line
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(cx + cos * r, cy + sin * r);
-          ctx.stroke();
-
-          // Sub-branches (V-shapes along each branch)
-          [0.42, 0.72].forEach(dist => {
-            const bx = cx + cos * r * dist;
-            const by = cy + sin * r * dist;
-            const bLen = 7;
-            ctx.beginPath();
-            ctx.moveTo(bx, by);
-            ctx.lineTo(bx + Math.cos(angle + Math.PI / 4) * bLen, by + Math.sin(angle + Math.PI / 4) * bLen);
-            ctx.moveTo(bx, by);
-            ctx.lineTo(bx + Math.cos(angle - Math.PI / 4) * bLen, by + Math.sin(angle - Math.PI / 4) * bLen);
-            ctx.stroke();
-          });
-        }
-
-        // Center crystal core
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 2.7, 0, Math.PI * 2);
-        ctx.fill();
-
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-        return texture;
+      random(min, max) {
+        return min + Math.random() * (max - min);
       },
 
       init() {
-        const container = document.getElementById('threeBackgroundContainer');
-        if (!container || typeof THREE === 'undefined') return;
+        this.canvas = document.getElementById('spaceBackgroundCanvas');
+        if (!this.canvas) throw new Error('Space background canvas is missing.');
+        this.ctx = this.canvas.getContext('2d', { alpha: true });
+        if (!this.ctx) throw new Error('Could not create the space background canvas context.');
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 250;
+        this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        this.reducedMotion = this.motionQuery.matches;
+        this.resizeHandler = () => this.resize();
+        this.visibilityHandler = () => this.handleVisibility();
+        this.motionHandler = event => this.handleMotionChange(event);
+        window.SpaceBackground = this;
+        this.start();
+      },
 
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-
-        // Use two scales so the snow reads clearly while retaining fine, star-like detail.
-        const createSnowfall = (count, size, opacity, minSpeed, maxSpeed) => {
-          const geometry = new THREE.BufferGeometry();
-          const positions = new Float32Array(count * 3);
-          const colors = new Float32Array(count * 3);
-          const velocities = new Float32Array(count);
-          const sways = new Float32Array(count);
-          const color1 = new THREE.Color(0x00d4aa);
-          const color2 = new THREE.Color(0x38bdf8);
-          const color3 = new THREE.Color(0xe2e8f0);
-
-          for (let i = 0; i < count; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 600;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 500;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
-            velocities[i] = minSpeed + Math.random() * (maxSpeed - minSpeed);
-            sways[i] = Math.random() * Math.PI * 2;
-
-            const mixed = Math.random() > 0.48
-              ? color1.clone().lerp(color2, Math.random())
-              : color2.clone().lerp(color3, Math.random());
-            colors[i * 3] = mixed.r;
-            colors[i * 3 + 1] = mixed.g;
-            colors[i * 3 + 2] = mixed.b;
-          }
-
-          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-          geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-          const material = new THREE.PointsMaterial({
-            size,
-            map: snowflakeTexture,
-            vertexColors: true,
-            transparent: true,
-            opacity,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-          });
-          const points = new THREE.Points(geometry, material);
-          scene.add(points);
-          return { count, geometry, positions, velocities, sways, points };
-        };
-
-        const snowflakeTexture = this.createSnowflakeTexture();
-        const snowLayers = [
-          createSnowfall(140, 12, 0.84, 0.08, 0.22),
-          createSnowfall(1000, 4.5, 0.8, 0.12, 0.3)
-        ];
-
-        let t = 0;
-        function animate() {
-          requestAnimationFrame(animate);
-          t += 0.006;
-
-          snowLayers.forEach(layer => {
-            for (let i = 0; i < layer.count; i++) {
-              const index = i * 3;
-              layer.positions[index + 1] -= layer.velocities[i];
-              layer.positions[index] += Math.sin(t + layer.sways[i]) * 0.08;
-
-              if (layer.positions[index + 1] < -250) {
-                layer.positions[index + 1] = 250;
-                layer.positions[index] = (Math.random() - 0.5) * 600;
-              }
-            }
-            layer.geometry.attributes.position.needsUpdate = true;
-            layer.points.rotation.y += 0.00015;
-          });
-          renderer.render(scene, camera);
+      start() {
+        if (!this.canvas || !this.ctx) {
+          this.canvas = document.getElementById('spaceBackgroundCanvas');
+          if (!this.canvas) throw new Error('Space background canvas is missing.');
+          this.ctx = this.canvas.getContext('2d', { alpha: true });
+          if (!this.ctx) throw new Error('Could not create the space background canvas context.');
         }
-        animate();
+        if (this.started) return;
 
-        window.addEventListener('resize', () => {
-          camera.aspect = window.innerWidth / window.innerHeight;
-          camera.updateProjectionMatrix();
-          renderer.setSize(window.innerWidth, window.innerHeight);
+        this.started = true;
+        if (!this.motionQuery) {
+          this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+          this.reducedMotion = this.motionQuery.matches;
+        }
+        this.resizeHandler = this.resizeHandler || (() => this.resize());
+        this.visibilityHandler = this.visibilityHandler || (() => this.handleVisibility());
+        this.motionHandler = this.motionHandler || (event => this.handleMotionChange(event));
+        window.addEventListener('resize', this.resizeHandler, { passive: true });
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+        this.motionQuery.addEventListener('change', this.motionHandler);
+        this.resize();
+        this.elapsed = 0;
+        this.nextMeteorAt = this.random(4, 9);
+        if (this.reducedMotion) this.drawFrame(0, false);
+        else if (!document.hidden) this.run();
+      },
+
+      stop() {
+        if (!this.started) return;
+        this.started = false;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        this.rafId = 0;
+        window.removeEventListener('resize', this.resizeHandler);
+        document.removeEventListener('visibilitychange', this.visibilityHandler);
+        this.motionQuery.removeEventListener('change', this.motionHandler);
+        this.ctx.clearRect(0, 0, this.width, this.height);
+      },
+
+      resize() {
+        if (!this.canvas || !this.ctx) return;
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.canvas.width = Math.round(this.width * this.dpr);
+        this.canvas.height = Math.round(this.height * this.dpr);
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+
+        this.stars = Array.from({ length: 190 }, () => ({
+          x: Math.random(),
+          y: Math.random(),
+          radius: this.random(0.35, 1.15),
+          alpha: this.random(0.09, 0.24),
+          phase: this.random(0, Math.PI * 2),
+          speed: this.random(0.12, 0.5),
+          color: Math.random() < 0.65 ? '210, 224, 255' : '142, 181, 255'
+        }));
+        this.asteroids = Array.from({ length: 18 }, () => ({
+          x: this.random(0, this.width),
+          y: this.random(0, this.height),
+          size: this.random(2, 5),
+          speed: this.random(3, 10),
+          rotation: this.random(0, Math.PI * 2),
+          rotationSpeed: this.random(-0.4, 0.4),
+          phase: this.random(0, Math.PI * 2),
+          vertices: Array.from({ length: 7 }, () => this.random(0.68, 1.18))
+        }));
+        if (this.reducedMotion) this.drawFrame(0, false);
+      },
+
+      run() {
+        if (!this.started || this.reducedMotion || document.hidden || this.rafId) return;
+        this.lastFrame = 0;
+        this.rafId = requestAnimationFrame(this.frame.bind(this));
+      },
+
+      frame(timestamp) {
+        this.rafId = 0;
+        if (!this.started || this.reducedMotion || document.hidden) return;
+        const delta = this.lastFrame ? Math.min((timestamp - this.lastFrame) / 1000, 0.05) : 0;
+        this.lastFrame = timestamp;
+        this.elapsed += delta;
+        this.drawFrame(this.elapsed, true, delta);
+        this.rafId = requestAnimationFrame(this.frame.bind(this));
+      },
+
+      handleVisibility() {
+        if (document.hidden) {
+          if (this.rafId) cancelAnimationFrame(this.rafId);
+          this.rafId = 0;
+          this.lastFrame = 0;
+        } else if (this.reducedMotion) {
+          this.drawFrame(this.elapsed, false);
+        } else {
+          this.run();
+        }
+      },
+
+      handleMotionChange(event) {
+        this.reducedMotion = event.matches;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        this.rafId = 0;
+        this.lastFrame = 0;
+        if (this.reducedMotion) this.drawFrame(this.elapsed, false);
+        else if (!document.hidden) this.run();
+      },
+
+      drawFrame(time, animate, delta = 0) {
+        const ctx = this.ctx;
+        if (!ctx) return;
+        ctx.clearRect(0, 0, this.width, this.height);
+        this.drawStars(time, animate);
+        this.drawGalaxy(time, animate);
+        this.drawSolarSystem(time, animate);
+        this.drawAsteroids(time, animate, delta);
+        this.drawMeteors(time, animate, delta);
+      },
+
+      drawStars(time, animate) {
+        const ctx = this.ctx;
+        this.stars.forEach(star => {
+          const twinkle = animate ? 0.72 + Math.sin(time * star.speed + star.phase) * 0.28 : 0.82;
+          ctx.fillStyle = `rgba(${star.color}, ${star.alpha * twinkle})`;
+          ctx.beginPath();
+          ctx.arc(star.x * this.width, star.y * this.height, star.radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      },
+
+      drawGalaxy(time, animate) {
+        const ctx = this.ctx;
+        const x = this.width * 0.83;
+        const y = this.height * 0.15;
+        const radius = Math.min(115, this.width * 0.14, this.height * 0.19);
+        const rotation = animate ? time * 0.018 : 0;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.scale(1, 0.58);
+        ctx.globalCompositeOperation = 'screen';
+        for (let arm = 0; arm < 3; arm++) {
+          ctx.beginPath();
+          for (let i = 0; i <= 190; i++) {
+            const progress = i / 190;
+            const angle = progress * Math.PI * 5 + arm * (Math.PI * 2 / 3);
+            const distance = radius * progress;
+            const px = Math.cos(angle) * distance;
+            const py = Math.sin(angle) * distance;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.strokeStyle = 'rgba(154, 174, 255, 0.065)';
+          ctx.lineWidth = 1.1;
+          ctx.stroke();
+        }
+        const core = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.3);
+        core.addColorStop(0, 'rgba(220, 226, 255, 0.11)');
+        core.addColorStop(1, 'rgba(129, 140, 248, 0)');
+        ctx.fillStyle = core;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      },
+
+      drawSolarSystem(time, animate) {
+        const ctx = this.ctx;
+        const x = Math.min(this.width * 0.34, Math.max(108, this.width * 0.19));
+        const y = Math.min(this.height - 46, this.height * 0.81);
+        const scale = Math.max(0.72, Math.min(1.18, this.width / 760, this.height / 520));
+        const baseRadius = Math.min(102 * scale, Math.max(56, this.width * 0.22));
+        const planets = [
+          { color: '#67e8f9', radius: 4.1, orbit: 0.42 },
+          { color: '#a5b4fc', radius: 4.7, orbit: 0.68 },
+          { color: '#fbbf77', radius: 5.2, orbit: 0.94, ring: true },
+          { color: '#93c5fd', radius: 5.7, orbit: 1.2, moon: true },
+          { color: '#86efac', radius: 6.2, orbit: 1.46 }
+        ];
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-0.22);
+
+        for (let i = 0; i < planets.length; i++) {
+          const planet = planets[i];
+          const rx = baseRadius * planet.orbit;
+          const ry = rx * 0.57;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(157, 176, 255, ${0.09 + i * 0.012})`;
+          ctx.lineWidth = 0.85;
+          ctx.stroke();
+
+          const angle = (animate ? time * (0.12 - i * 0.012) : 0) + i * 1.17;
+          const px = Math.cos(angle) * rx;
+          const py = Math.sin(angle) * ry;
+          const planetRadius = planet.radius * scale;
+          ctx.save();
+          ctx.shadowColor = planet.color;
+          ctx.shadowBlur = 9 * scale;
+          const planetShade = ctx.createRadialGradient(
+            px - planetRadius * 0.35, py - planetRadius * 0.38, planetRadius * 0.1,
+            px, py, planetRadius * 1.15
+          );
+          planetShade.addColorStop(0, '#ffffff');
+          planetShade.addColorStop(0.24, planet.color);
+          planetShade.addColorStop(1, 'rgba(44, 58, 112, 0.94)');
+          ctx.fillStyle = planetShade;
+          ctx.beginPath();
+          ctx.arc(px, py, planetRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          if (planet.ring) {
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(-0.35);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, planetRadius * 2.15, planetRadius * 0.78, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 214, 159, 0.55)';
+            ctx.lineWidth = 1.15;
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (planet.moon) {
+            const moonAngle = animate ? time * 0.55 : 0.5;
+            ctx.fillStyle = 'rgba(235, 243, 255, 0.78)';
+            ctx.shadowColor = 'rgba(190, 215, 255, 0.5)';
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(px + Math.cos(moonAngle) * 9 * scale, py + Math.sin(moonAngle) * 7 * scale, 1.8 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+        }
+
+        const sunGlow = ctx.createRadialGradient(0, 0, 1, 0, 0, 28 * scale);
+        sunGlow.addColorStop(0, 'rgba(255, 225, 160, 0.34)');
+        sunGlow.addColorStop(0.28, 'rgba(255, 188, 105, 0.18)');
+        sunGlow.addColorStop(1, 'rgba(255, 170, 100, 0)');
+        ctx.fillStyle = sunGlow;
+        ctx.beginPath();
+        ctx.arc(0, 0, 20 * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 228, 166, 0.72)';
+        ctx.shadowColor = 'rgba(255, 197, 115, 0.65)';
+        ctx.shadowBlur = 9 * scale;
+        ctx.beginPath();
+        ctx.arc(0, 0, 5.2 * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      },
+
+      drawAsteroids(time, animate, delta) {
+        const ctx = this.ctx;
+        this.asteroids.forEach((asteroid, index) => {
+          if (animate) {
+            asteroid.x += delta * asteroid.speed;
+            asteroid.y -= delta * asteroid.speed * 0.42;
+            asteroid.rotation += asteroid.rotationSpeed * delta;
+            if (asteroid.x > this.width + 20 || asteroid.y < -20) {
+              asteroid.x = this.random(-this.width * 0.2, -10);
+              asteroid.y = this.random(this.height * 0.35, this.height + 20);
+            }
+          }
+          ctx.save();
+          ctx.translate(asteroid.x, asteroid.y);
+          ctx.rotate(asteroid.rotation);
+          ctx.beginPath();
+          asteroid.vertices.forEach((factor, vertex) => {
+            const angle = (vertex / asteroid.vertices.length) * Math.PI * 2;
+            const radius = asteroid.size * factor;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius * 0.78;
+            if (vertex === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+          ctx.fillStyle = `rgba(172, 190, 225, ${0.055 + (index % 4) * 0.012})`;
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(192, 207, 240, 0.11)';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+          ctx.restore();
+        });
+      },
+
+      drawMeteors(time, animate, delta) {
+        const ctx = this.ctx;
+        if (!animate) return;
+        if (time >= this.nextMeteorAt) {
+          const burstCount = Math.random() < 0.24 ? 2 : 1;
+          for (let i = 0; i < burstCount; i++) {
+            this.meteors.push({
+              x: this.random(this.width * 0.2, this.width),
+              y: this.random(0, this.height * 0.62),
+              age: 0,
+              duration: this.random(0.7, 1.15),
+              length: this.random(70, 135),
+              speed: this.random(560, 850),
+              angle: this.random(Math.PI * 0.68, Math.PI * 0.82)
+            });
+          }
+          this.nextMeteorAt = time + this.random(1.8, 3.4);
+        }
+        this.meteors = this.meteors.filter(meteor => meteor.age < meteor.duration);
+        this.meteors.forEach(meteor => {
+          meteor.age += delta;
+          const progress = Math.min(1, meteor.age / meteor.duration);
+          const opacity = Math.sin(progress * Math.PI) * 0.24;
+          const dx = Math.cos(meteor.angle);
+          const dy = Math.sin(meteor.angle);
+          meteor.x += dx * meteor.speed * delta;
+          meteor.y += dy * meteor.speed * delta;
+          const gradient = ctx.createLinearGradient(
+            meteor.x - dx * meteor.length, meteor.y - dy * meteor.length,
+            meteor.x, meteor.y
+          );
+          gradient.addColorStop(0, 'rgba(190, 220, 255, 0)');
+          gradient.addColorStop(1, `rgba(220, 235, 255, ${opacity})`);
+          ctx.strokeStyle = gradient;
+          ctx.shadowColor = `rgba(180, 215, 255, ${opacity * 0.7})`;
+          ctx.shadowBlur = 5;
+          ctx.lineWidth = 1.45;
+          ctx.beginPath();
+          ctx.moveTo(meteor.x - dx * meteor.length, meteor.y - dy * meteor.length);
+          ctx.lineTo(meteor.x, meteor.y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
         });
       }
     };
@@ -3693,7 +3935,7 @@
        14. INITIALIZATION
        ===================================================================== */
     document.addEventListener('DOMContentLoaded', () => {
-      Ambient3D.init();
+      SpaceBackground.init();
       Charts.init();
       BioScanner.initControls();
       FloatingPanel.init();
