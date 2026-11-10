@@ -31,7 +31,9 @@ jobs:
       - name: Prepare site files
         run: |
           mkdir _site
+          mkdir _site/assets
           cp index.html somnisync_v2.html somnisync_dashboard.html "somnisync_dashboard (1).html" _site/
+          cp assets/somnisync-logo.png _site/assets/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
