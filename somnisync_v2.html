@@ -416,17 +416,17 @@
               <div id="bedLiveHrSub" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Normal</div>
             </div>
 
-            <!-- Mattress Temp / Blood Pressure Card -->
-            <div id="cardMattressTemp" class="glass-subcard p-3.5 border-amber-500/30">
+            <!-- Body Temperature / Blood Pressure Card -->
+            <div id="cardBodyTemp" class="glass-subcard p-3.5 border-amber-500/30">
               <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
                 <span class="flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                  Mattress Temp
+                  Body Temp
                 </span>
                 <span id="bedLiveBp" class="text-[10px] font-mono text-slate-300">BP: 118/76</span>
               </div>
-              <div id="bedLiveTemp" class="text-xl sm:text-2xl font-black font-mono text-amber-300 mt-1">24.0 °C</div>
-              <div id="bedLiveTempSub" class="text-[10px] text-slate-400 font-semibold mt-0.5">Comfortable</div>
+              <div id="bedLiveBodyTemp" class="text-xl sm:text-2xl font-black font-mono text-amber-300 mt-1">36.8 °C</div>
+              <div id="bedLiveBodyTempSub" class="text-[10px] text-slate-400 font-semibold mt-0.5">Normal</div>
             </div>
 
             <!-- Snoring / Breathing Card -->
@@ -2423,7 +2423,9 @@
           hr: currentHr,
           hrSub: 'Normal',
           temp: 24.0,
-          tempSub: 'Comfortable',
+          bodyTemp: 36.8,
+          bodyTempSub: 'Normal',
+          breathingRate: 14,
           angle: 0,
           snoring: 36,
           snoreSub: 'Quiet breathing',
@@ -2438,6 +2440,8 @@
           sweat: false,
           isEmergency: false
         });
+
+        this.startSafeVitals();
 
         // Fluctuates HR every 3 seconds: 65-75 bpm
         this.hrInterval = setInterval(() => {
@@ -2461,10 +2465,12 @@
           hr: currentHr,
           hrSub: 'Elevated',
           temp: 31.0,
-          tempSub: 'Temperature rising',
+          bodyTemp: 36.9,
+          bodyTempSub: 'Normal',
+          breathingRate: 16,
           angle: 0,
-          snoring: 63,
-          snoreSub: 'Breathing alert',
+          snoring: 38,
+          snoreSub: 'Quiet breathing',
           bp: '160/100 · Rising',
           statusTitle: 'High heart rate detected',
           statusDesc: 'Emergency call starts in 15 seconds unless canceled.',
@@ -2476,6 +2482,8 @@
           sweat: true,
           isEmergency: true
         });
+
+        this.startSafeVitals();
 
         // 1. Play 3-beep alarm sound via Web Audio API
         AudioEngine.playAlarmBeep();
@@ -2530,6 +2538,9 @@
           hr: 128,
           hrSub: 'Stabilizing',
           temp: 31.0,
+          bodyTemp: 36.9,
+          bodyTempSub: 'Normal',
+          breathingRate: 15,
           angle: 12,
           snoring: 38,
           snoreSub: 'Breathing stable',
@@ -2545,7 +2556,9 @@
           isEmergency: false
         });
 
-        // Animate temperature from 31 → 19°C and HR from 128 → 58 bpm over 3 seconds
+        this.startSafeVitals();
+
+        // Animate mattress cooling from 31 → 19°C and HR from 128 → 58 bpm.
         let currentTemp = 31.0;
         const targetTemp = 19.0;
         let startHr = 128;
@@ -2559,16 +2572,13 @@
           const interpTemp = (currentTemp - (currentTemp - targetTemp) * factor).toFixed(1);
           const interpHr = Math.round(startHr - (startHr - targetHr) * factor);
 
-          document.getElementById('bedLiveTemp').textContent = `${interpTemp} °C`;
-          document.getElementById('tempSliderVal').textContent = `${interpTemp}°C`;
-          document.getElementById('tempSlider').value = interpTemp;
+          MattressControls.setTemp(interpTemp);
 
           document.getElementById('bedLiveHr').textContent = `${interpHr} bpm`;
           FloatingPanel.updateStatus('autopilot', interpHr);
 
           if (currentStep >= steps) {
             clearInterval(animTimer);
-            document.getElementById('bedLiveTempSub').textContent = 'Cooling target reached';
             document.getElementById('bedLiveHrSub').textContent = 'Heart rate stable';
           }
         }, 100);
@@ -2584,7 +2594,9 @@
           hr: 58,
           hrSub: 'Stable',
           temp: 19.0,
-          tempSub: 'Cooling target reached',
+          bodyTemp: 36.7,
+          bodyTempSub: 'Normal',
+          breathingRate: 13,
           angle: 12,
           snoring: 36,
           snoreSub: 'Quiet breathing',
@@ -2599,6 +2611,8 @@
           sweat: false,
           isEmergency: false
         });
+
+        this.startSafeVitals();
 
         // Show smartphone modal overlay with 92/100 score ring
         const phoneModal = document.getElementById('morningPhoneModal');
@@ -2718,16 +2732,35 @@
         FloatingPanel.showCountdown(sec);
       },
 
+      startSafeVitals() {
+        const updateSafeVitals = () => {
+          const bodyTemp = (36.4 + Math.floor(Math.random() * 9) / 10).toFixed(1);
+          const breathingRate = 12 + Math.floor(Math.random() * 7);
+          const breathingNoise = 32 + Math.floor(Math.random() * 9);
+
+          document.getElementById('bedLiveBodyTemp').textContent = `${bodyTemp} °C`;
+          document.getElementById('bedLiveBodyTempSub').textContent = 'Normal · simulated';
+          document.getElementById('bedLiveBreathRate').textContent = `${breathingRate} br/min`;
+          document.getElementById('bedLiveSnoring').textContent = `${breathingNoise} dB`;
+          document.getElementById('bedLiveSnoringSub').textContent = 'Quiet breathing';
+        };
+
+        updateSafeVitals();
+        this.timers.push(setInterval(updateSafeVitals, 2500));
+      },
+
       updateUI(params) {
         // Telemetry cards
         if (params.hr !== undefined) document.getElementById('bedLiveHr').textContent = `${params.hr} bpm`;
         if (params.hrSub) document.getElementById('bedLiveHrSub').textContent = params.hrSub;
-        if (params.temp !== undefined) {
-          document.getElementById('bedLiveTemp').textContent = `${params.temp.toFixed(1)} °C`;
-          document.getElementById('tempSlider').value = params.temp;
-          document.getElementById('tempSliderVal').textContent = `${params.temp.toFixed(1)}°C`;
+        if (params.bodyTemp !== undefined) {
+          document.getElementById('bedLiveBodyTemp').textContent = `${params.bodyTemp.toFixed(1)} °C`;
         }
-        if (params.tempSub) document.getElementById('bedLiveTempSub').textContent = params.tempSub;
+        if (params.bodyTempSub) document.getElementById('bedLiveBodyTempSub').textContent = params.bodyTempSub;
+        if (params.temp !== undefined) MattressControls.setTemp(params.temp);
+        if (params.breathingRate !== undefined) {
+          document.getElementById('bedLiveBreathRate').textContent = `${params.breathingRate} br/min`;
+        }
         if (params.snoring !== undefined) document.getElementById('bedLiveSnoring').textContent = `${params.snoring} dB`;
         if (params.snoreSub) document.getElementById('bedLiveSnoringSub').textContent = params.snoreSub;
         if (params.bp) document.getElementById('bedLiveBp').textContent = `BP: ${params.bp}`;
@@ -2818,7 +2851,6 @@
         val = parseFloat(val);
         document.getElementById('tempSlider').value = val;
         document.getElementById('tempSliderVal').textContent = `${val.toFixed(1)}°C`;
-        document.getElementById('bedLiveTemp').textContent = `${val.toFixed(1)} °C`;
 
         const heatWaves = document.getElementById('svgHeatWaves');
         const coolParticles = document.getElementById('svgCoolParticles');
