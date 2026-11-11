@@ -251,15 +251,143 @@
     }
 
     /* SVG Keyframes Animations */
-    @keyframes radarWave {
-      0% { opacity: 0.65; transform: scaleY(0.85); }
-      50% { opacity: 0.2; transform: scaleY(1.08); }
-      100% { opacity: 0.65; transform: scaleY(0.85); }
+    /* ── CSS variables for state-aware radar colours ── */
+    :root {
+      --radar-color: #00d4aa;
+      --radar-speed: 1;
+    }
+    .state-emergency {
+      --radar-color: #f43f5e;
+      --radar-speed: 0.5;
+    }
+    .state-autopilot {
+      --radar-color: #38bdf8;
+      --radar-speed: 1;
+    }
+
+    /* Soft beam pulse: transform-origin at band (bottom), scaleY 0.6→1, opacity 0.15→0.35 */
+    @keyframes radarConeBreath {
+      0%   { transform: scaleY(0.6);  opacity: 0.15; }
+      50%  { transform: scaleY(1.0);  opacity: 0.35; }
+      100% { transform: scaleY(0.6);  opacity: 0.15; }
     }
     .sensor-cone {
-      animation: radarWave 2.2s infinite ease-in-out;
-      transform-origin: bottom center;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: radarConeBreath 3.2s ease-in-out infinite;
+      pointer-events: none;
     }
+    .sensor-cone.c2 { animation-delay: 1.0s; }
+    .sensor-cone.c3 { animation-delay: 2.0s; }
+
+    /* Thin scan line sweeping head→feet (translateX only, stays at y=123) */
+    /* Rect is 12 px wide so at peak translateX(458) it ends at x=620, inside clip */
+    @keyframes scanLineSweep {
+      0%   { transform: translateX(0px);   opacity: 0;   }
+      8%   { opacity: 0.5; }
+      50%  { transform: translateX(458px); opacity: 0.5; }
+      92%  { opacity: 0.5; }
+      100% { transform: translateX(0px);   opacity: 0;   }
+    }
+    .radar-scan-line {
+      animation: scanLineSweep 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* Sound-wave ripple arcs: scale 0.3→1.4, opacity 0.35→0 */
+    @keyframes rippleArc {
+      0%   { transform: scale(0.3); opacity: 0.35; }
+      100% { transform: scale(1.4); opacity: 0;    }
+    }
+    .radar-ripple {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: rippleArc 2.4s ease-out infinite;
+      pointer-events: none;
+    }
+    .radar-ripple.d1 { animation-delay: 0s;   }
+    .radar-ripple.d2 { animation-delay: 0.8s; }
+    .radar-ripple.d3 { animation-delay: 1.6s; }
+
+    /* Reduced-motion: freeze all radar animations to static faint cones */
+    @media (prefers-reduced-motion: reduce) {
+      .sensor-cone       { animation: none; opacity: 0.15; transform: scaleY(0.8); }
+      .radar-scan-line   { animation: none; opacity: 0; }
+      .radar-ripple      { animation: none; opacity: 0; }
+    }
+
+    @keyframes zzzDrift {
+      0% {
+        opacity: 0;
+        transform: translate(0px, 10px) scale(0.7) rotate(-8deg);
+      }
+      18% {
+        opacity: 0.22;
+        transform: translate(2px, 5px) scale(0.85) rotate(-4deg);
+      }
+      42% {
+        opacity: 0.96;
+        transform: translate(7px, -4px) scale(1.05) rotate(0deg);
+      }
+      68% {
+        opacity: 0.72;
+        transform: translate(10px, -16px) scale(1.18) rotate(5deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(14px, -28px) scale(1.3) rotate(8deg);
+      }
+    }
+
+    @keyframes zzzAlertPulse {
+      0% {
+        opacity: 0.55;
+        transform: scale(1) rotate(0deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.12) rotate(2deg);
+      }
+      100% {
+        opacity: 0.58;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+
+
+    #svgSnoreText,
+    .zzz-ghost {
+      transform-box: fill-box;
+      transform-origin: center;
+      font-weight: 800;
+      fill: #a78bfa;
+      filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.35));
+    }
+
+    #svgSnoreText {
+      animation: zzzDrift 3.6s ease-in-out infinite;
+    }
+
+    .zzz-ghost {
+      opacity: 0;
+      animation: zzzDrift 3.6s ease-in-out infinite;
+    }
+
+    .zzz-ghost.secondary {
+      animation-delay: 0.9s;
+    }
+
+    .zzz-ghost.tertiary {
+      animation-delay: 1.8s;
+    }
+
+    #svgSnoreText.warning-mode {
+      animation: zzzAlertPulse 1.4s ease-in-out infinite;
+      fill: #f43f5e;
+      filter: drop-shadow(0 0 14px rgba(244, 63, 94, 0.38));
+    }
+
 
     @keyframes heatFloat {
       0% { transform: translateY(6px); opacity: 0; }
@@ -636,36 +764,121 @@
           <div class="my-4 relative flex items-center justify-center select-none py-2">
             <svg id="smartBedSvg" viewBox="0 0 760 230" class="w-full max-w-[720px] h-auto overflow-visible">
               <defs>
-                <!-- Radar Beam Gradient -->
+                <!-- CLIP: confine all radar effects to the mattress interior -->
+                <clipPath id="bedScanClip">
+                  <rect x="132" y="60" width="503" height="92" />
+                </clipPath>
+
+                <!-- New teal cone gradient: opaque at band (y=152), transparent at top (y=60) -->
+                <linearGradient id="coneGradTeal" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%"   stop-color="#00d4aa" stop-opacity="0.30"/>
+                  <stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/>
+                </linearGradient>
+
+                <!-- Scan line gradient: soft fade in/out at ends — userSpaceOnUse for line element -->
+                <linearGradient id="scanLineGrad" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="620" y2="0">
+                  <stop offset="0%"   stop-color="#00d4aa" stop-opacity="0"/>
+                  <stop offset="8%"   stop-color="#00d4aa" stop-opacity="0.5"/>
+                  <stop offset="92%"  stop-color="#00d4aa" stop-opacity="0.5"/>
+                  <stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/>
+                </linearGradient>
+
+                <!-- Legacy gradient kept for backwards compat (heat waves, etc.) -->
+                <linearGradient id="bodyScanTrailGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   stop-color="#00d4aa" stop-opacity="0"/>
+                  <stop offset="12%"  stop-color="#99f6e4" stop-opacity="0.28"/>
+                  <stop offset="56%"  stop-color="#00d4aa" stop-opacity="0.46"/>
+                  <stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/>
+                </linearGradient>
+
+                <!-- Radar beam gradient (kept for legacy; unused now) -->
                 <linearGradient id="radarBeamGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#0a84ff" stop-opacity="0.03"/>
+                  <stop offset="0%"   stop-color="#0a84ff" stop-opacity="0.03"/>
                   <stop offset="100%" stop-color="#0a84ff" stop-opacity="0.38"/>
                 </linearGradient>
 
                 <!-- Blanket Gradient -->
                 <linearGradient id="blanketGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#1e293b"/>
-                  <stop offset="50%" stop-color="#2d3748"/>
+                  <stop offset="0%"   stop-color="#1e293b"/>
+                  <stop offset="50%"  stop-color="#2d3748"/>
                   <stop offset="100%" stop-color="#1e293b"/>
                 </linearGradient>
 
                 <!-- Mattress Core Gradient -->
                 <linearGradient id="mattressCoreGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#334155"/>
+                  <stop offset="0%"   stop-color="#334155"/>
                   <stop offset="100%" stop-color="#1e293b"/>
                 </linearGradient>
               </defs>
 
-              <!-- SENSOR LAYER RADAR CONES (Step 1: Sense) -->
-              <g id="svgRadarCones">
-                <polygon points="215,75 165,152 265,152" fill="url(#radarBeamGrad)" class="sensor-cone" />
-                <polygon points="385,75 325,152 445,152" fill="url(#radarBeamGrad)" class="sensor-cone" style="animation-delay: -0.7s;" />
-                <polygon points="535,75 480,152 590,152" fill="url(#radarBeamGrad)" class="sensor-cone" style="animation-delay: -1.4s;" />
-                
-                <!-- Elliptical Radar Rings -->
-                <ellipse cx="385" cy="162" rx="90" ry="16" fill="none" stroke="#0a84ff" stroke-width="1.2" stroke-opacity="0.35" />
-                <ellipse cx="385" cy="166" rx="140" ry="24" fill="none" stroke="#0a84ff" stroke-width="1.2" stroke-opacity="0.2" />
+              <!-- RADAR EFFECTS — all clipped to mattress interior -->
+              <g id="svgRadarCones" clip-path="url(#bedScanClip)" pointer-events="none">
+
+                <!-- ── 3 soft teal beam cones (gradient, transform-origin at band y=152) ── -->
+                <!-- Cone 1: head region x=215 -->
+                <polygon class="sensor-cone c1"
+                  points="215,152 165,80 265,80"
+                  fill="url(#coneGradTeal)" />
+                <!-- Cone 2: torso region x=385, 1 s delay -->
+                <polygon class="sensor-cone c2"
+                  points="385,152 325,80 445,80"
+                  fill="url(#coneGradTeal)" />
+                <!-- Cone 3: legs region x=535, 2 s delay -->
+                <polygon class="sensor-cone c3"
+                  points="535,152 480,80 590,80"
+                  fill="url(#coneGradTeal)" />
+
+                <!-- ── Thin vertical scan cursor sweeping head→feet ── -->
+                <!-- 2 px wide × 50 px tall at y=100; translateX 0→458→0 keeps x in 150–620 (clip x 132–635) -->
+                <rect class="radar-scan-line"
+                  x="150" y="100" width="2" height="50"
+                  fill="#00d4aa" />
+
+                <!-- ── Sound-wave ripple arcs from each sensor node ── -->
+                <!-- Sensor group 1 (~x=165-265, y=147.5) -->
+                <g>
+                  <path class="radar-ripple d1"
+                    d="M 155,147 C 185,125 235,120 275,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d2"
+                    d="M 155,147 C 185,125 235,120 275,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d3"
+                    d="M 155,147 C 185,125 235,120 275,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                </g>
+                <!-- Sensor group 2 (~x=325-445, y=147.5) -->
+                <g>
+                  <path class="radar-ripple d2"
+                    d="M 315,147 C 350,118 415,118 455,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d3"
+                    d="M 315,147 C 350,118 415,118 455,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d1"
+                    d="M 315,147 C 350,118 415,118 455,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                </g>
+                <!-- Sensor group 3 (~x=505-610, y=147.5) -->
+                <g>
+                  <path class="radar-ripple d3"
+                    d="M 495,147 C 525,118 585,118 620,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d1"
+                    d="M 495,147 C 525,118 585,118 620,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                  <path class="radar-ripple d2"
+                    d="M 495,147 C 525,118 585,118 620,147"
+                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
+                </g>
+
+                <!-- ── Elliptical ground rings (at sensor band) ── -->
+                <ellipse cx="385" cy="152" rx="90"  ry="10" fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-opacity="0.25" />
+                <ellipse cx="385" cy="152" rx="140" ry="16" fill="none" stroke="#00d4aa" stroke-width="1.0" stroke-opacity="0.14" />
               </g>
+
+              <!-- BODY-SCANNING SONAR — clipped, legacy group renamed, now empty placeholder kept for JS id -->
+              <g id="svgBodyRadar" opacity="0"></g>
 
               <!-- HEAT WAVES (Visible in Emergency / Temp > 27°C) -->
               <g id="svgHeatWaves" class="hidden" stroke="#ff9f0a" stroke-width="2.2" fill="none" stroke-linecap="round">
@@ -712,7 +925,12 @@
                   </g>
                   
                   <!-- Snoring / Status Text Badge -->
-                  <text id="svgSnoreText" x="194" y="78" fill="#0a84ff" font-size="13" font-weight="800" font-family="Inter, sans-serif">Zzz</text>
+                  <g>
+                    <text class="zzz-ghost" x="186" y="76" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">z</text>
+                    <text class="zzz-ghost secondary" x="196" y="74" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">Z</text>
+                    <text class="zzz-ghost tertiary" x="206" y="72" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">Z</text>
+                    <text id="svgSnoreText" x="194" y="78" fill="#a78bfa" font-size="13" font-weight="800" font-family="Inter, sans-serif">Zzz</text>
+                  </g>
                 </g>
 
                 <!-- Sleeper Upper Torso Under Blanket -->
@@ -3434,8 +3652,9 @@
         if (coolGroup) coolGroup.classList.toggle('hidden', !params.coolParticles);
         if (sweatGroup) sweatGroup.classList.toggle('hidden', !params.sweat);
         if (snoreText) {
-          snoreText.textContent = params.isEmergency ? 'Warning: ' : 'Zzz';
-          snoreText.setAttribute('fill', params.isEmergency ? '#ff453a' : '#0a84ff');
+          snoreText.textContent = params.isEmergency ? '⚠️' : 'Zzz';
+          snoreText.setAttribute('fill', params.isEmergency ? '#f43f5e' : '#a78bfa');
+          snoreText.classList.toggle('warning-mode', !!params.isEmergency);
         }
 
         // Charts update
