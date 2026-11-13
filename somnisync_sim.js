@@ -328,6 +328,7 @@ const server = http.createServer((request, response) => {
     sendJson(response, 200, {
       ok: true,
       telegramConfigured: !getTelegramConfigError(),
+      telegramConfigError: getTelegramConfigError() || null,
       state,
     });
     return;
