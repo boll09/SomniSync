@@ -1,4 +1,8 @@
 desktop.ini
 .vscode/
 *.log
+.venv-telegram/
+somnisync_telegram_user.session
+somnisync_telegram_user.session-journal
+.somnisync_server.pid
 

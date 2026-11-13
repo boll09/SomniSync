@@ -5,11 +5,10 @@
  * Run in PowerShell:
  *   node .\somnisync_sim.js
  *
- * Optional Twilio configuration (live calls are selected from the presenter panel):
- *   $env:ACCOUNT_SID="your_account_sid"
- *   $env:AUTH_TOKEN="your_auth_token"
- *   $env:EMERGENCY_CONTACT="+..."
- *   node .\somnisync_sim.js
+ * Optional Telegram user-to-user Voice configuration (live calls are selected
+ * from the presenter panel): TELEGRAM_API_ID, TELEGRAM_API_HASH and
+ * TELEGRAM_CALL_TO are read from the server process environment. The sender
+ * must complete a one-time Telegram user login with start_somnisync_live.ps1.
  *
  * The script serves the dashboard and its API at http://127.0.0.1:3000.
  * Do not open the HTML through file://; use the local URL above.
@@ -21,17 +20,28 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const readline = require("node:readline");
+const crypto = require("node:crypto");
+const { spawn } = require("node:child_process");
 
 const CONFIG = Object.freeze({
-  accountSid: process.env.ACCOUNT_SID || "",
-  authToken: process.env.AUTH_TOKEN || "",
-  emergencyContact: process.env.EMERGENCY_CONTACT || "",
+  telegramApiId: process.env.TELEGRAM_API_ID || "",
+  telegramApiHash: process.env.TELEGRAM_API_HASH || "",
+  telegramCallTo: process.env.TELEGRAM_CALL_TO || "",
+  pythonPath: process.env.TELEGRAM_PYTHON_PATH || (process.platform === "win32"
+    ? path.join(__dirname, ".venv-telegram", "Scripts", "python.exe")
+    : "python3"),
+  telegramSessionPath: process.env.TELEGRAM_SESSION_PATH || path.join(__dirname, "somnisync_telegram_user.session"),
+  telegramSessionString: process.env.TELEGRAM_SESSION_STRING || "",
+  telegramAlertFile: process.env.TELEGRAM_ALERT_FILE || path.join(__dirname, "somnisync_emergency.wav"),
+  telegramCallScript: path.join(__dirname, "telegram_voice_call.py"),
   port: Number(process.env.PORT || "3000"),
-  readingIntervalMs: 3000,
+  host: process.env.HOST || (process.env.ALLOW_REMOTE === "true" ? "0.0.0.0" : "127.0.0.1"),
+  allowRemote: process.env.ALLOW_REMOTE === "true",
   escalationDelaySeconds: 15,
 });
 
 const dashboardPath = path.join(__dirname, "somnisync_v2.html");
+const apiToken = crypto.randomBytes(32).toString("hex");
 
 let state = "NORMAL";
 let readingTimer = null;
@@ -46,6 +56,7 @@ let escalationDeadline = null;
 let latestCallStatus = null;
 let callMode = "dry-run";
 const eventClients = new Set();
+let activeTelegramCall = null;
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const log = (message) => console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
@@ -66,12 +77,13 @@ function broadcast(event) {
 }
 
 function getCallModeStatus() {
+  const unavailableReason = getTelegramConfigError();
   return {
     event: "call-mode",
     mode: callMode,
-    liveAvailable: !getTwilioConfigError(),
+    liveAvailable: !unavailableReason,
     locked: state === "EMERGENCY",
-    ...(getTwilioConfigError() ? { unavailableReason: getTwilioConfigError() } : {}),
+    ...(unavailableReason ? { unavailableReason } : {}),
   };
 }
 
@@ -98,77 +110,80 @@ function enterNormal(reason = "", { broadcastState = true } = {}) {
   readingTimer = setInterval(() => emitReading(randomInt(65, 75)), CONFIG.readingIntervalMs);
 }
 
-function getTwilioConfigError() {
-  if (!/^AC[0-9a-fA-F]{32}$/.test(CONFIG.accountSid)) {
-    return "ACCOUNT_SID must be a valid Twilio Account SID.";
-  }
-  if (!CONFIG.authToken) return "AUTH_TOKEN is not set.";
-  if (!/^\+[1-9]\d{6,14}$/.test(CONFIG.emergencyContact)) {
-    return "EMERGENCY_CONTACT must be in E.164 format (for example, +15551234567).";
-  }
+function getTelegramConfigError() {
+  if (!/^\d+$/.test(CONFIG.telegramApiId)) return "Telegram API ID is missing or invalid.";
+  if (!/^[0-9a-fA-F]{32}$/.test(CONFIG.telegramApiHash)) return "Telegram API hash is missing or invalid.";
+  if (!/^@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(CONFIG.telegramCallTo)) return "Recipient must be a Telegram @username.";
+  if (!fs.existsSync(CONFIG.pythonPath)) return `Telegram Python runtime was not found at ${CONFIG.pythonPath}.`;
+  if (!CONFIG.telegramSessionString && !fs.existsSync(CONFIG.telegramSessionPath)) return "The Telegram sender account has not been signed in yet. Set TELEGRAM_SESSION_STRING or provide a session file.";
+  if (!fs.existsSync(CONFIG.telegramAlertFile)) return "The emergency WAV file is missing.";
+  if (!fs.existsSync(CONFIG.telegramCallScript)) return "telegram_voice_call.py is missing.";
   return "";
 }
 
 async function placeEmergencyCall() {
   log("15 seconds elapsed; emergency escalation is active.");
   if (callMode === "dry-run") {
-    log("DRY RUN: no phone call was placed.");
-    broadcast({ event: "call-status", status: "dry-run", message: "Dry run · no call placed" });
+    log("DRY RUN: no Telegram call was placed.");
+    broadcast({ event: "call-status", status: "dry-run", message: "Demo only · no Telegram call placed" });
     return;
   }
 
-  const configError = getTwilioConfigError();
+  const configError = getTelegramConfigError();
   if (configError) {
-    log(`Twilio call not placed: ${configError}`);
+    log(`Telegram call not placed: ${configError}`);
     broadcast({ event: "call-status", status: "error", message: configError });
     return;
   }
 
-  broadcast({ event: "call-status", status: "placing", message: "Connecting emergency call…" });
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${CONFIG.accountSid}/Calls.json`;
-  const authorization = Buffer.from(`${CONFIG.accountSid}:${CONFIG.authToken}`).toString("base64");
-  const body = new URLSearchParams({
-    To: CONFIG.emergencyContact,
-    Url: "https://webhooks.twilio.com/v1/Voice/Template/voice_text_to_speech",
+  broadcast({ event: "call-status", status: "placing", message: `Starting a Telegram call to ${CONFIG.telegramCallTo}…` });
+  const child = spawn(CONFIG.pythonPath, [CONFIG.telegramCallScript, "--call"], {
+    cwd: __dirname,
+    env: {
+      ...process.env,
+      TELEGRAM_SESSION_PATH: CONFIG.telegramSessionPath,
+      TELEGRAM_SESSION_STRING: CONFIG.telegramSessionString,
+      TELEGRAM_ALERT_FILE: CONFIG.telegramAlertFile,
+    },
+    stdio: ["pipe", "pipe", "pipe"],
+    windowsHide: true,
   });
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${authorization}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-      signal: AbortSignal.timeout(15000),
-    });
-    const responseBody = await response.text();
-    let result;
-    try {
-      result = JSON.parse(responseBody);
-    } catch {
-      result = null;
+  activeTelegramCall = child;
+  let stdoutBuffer = "";
+  child.stdout.setEncoding("utf8");
+  child.stdout.on("data", (chunk) => {
+    stdoutBuffer += chunk;
+    const lines = stdoutBuffer.split(/\r?\n/);
+    stdoutBuffer = lines.pop() || "";
+    for (const line of lines) {
+      try {
+        const event = JSON.parse(line);
+        if (event && event.status && event.message) {
+          log(`Telegram call: ${event.message}`);
+          broadcast({ event: "call-status", status: event.status, message: event.message });
+        }
+      } catch {
+        if (line.trim()) log(`Telegram call: ${line.trim()}`);
+      }
     }
-
-    if (!response.ok) {
-      log(`Twilio call failed: HTTP ${response.status} ${result?.message || response.statusText}`);
-      broadcast({
-        event: "call-status",
-        status: "error",
-        message: `Twilio call failed (HTTP ${response.status}).`,
-      });
-      return;
+  });
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    const details = chunk.trim();
+    if (details) log(`Telegram call detail: ${details}`);
+  });
+  child.on("error", (error) => {
+    log(`Telegram call could not start: ${error.message}`);
+    broadcast({ event: "call-status", status: "error", message: "Could not start the Telegram call service." });
+    activeTelegramCall = null;
+  });
+  child.on("exit", (code) => {
+    if (activeTelegramCall === child) activeTelegramCall = null;
+    if (code !== 0 && state !== "NORMAL") {
+      log(`Telegram call process ended with code ${code}.`);
+      broadcast({ event: "call-status", status: "error", message: "Telegram call ended before it could be completed. Check the server log." });
     }
-    log(`Twilio accepted the trial-compatible call request (status: ${result?.status || "unknown"}).`);
-    broadcast({
-      event: "call-status",
-      status: "accepted",
-      message: "Twilio accepted the call request. The verified recipient may receive a call with Twilio's standard trial prompt.",
-    });
-  } catch (error) {
-    log(`Twilio request failed: ${error.message}`);
-    broadcast({ event: "call-status", status: "error", message: "Could not connect to Twilio." });
-  }
+  });
 }
 
 function enterEmergency() {
@@ -228,7 +243,7 @@ function handleKey(key) {
   if (key === "1") {
     if (state === "EMERGENCY") {
       enterNormal("emergency cancelled", { broadcastState: false });
-      broadcast({ event: "call-status", status: "cancelled", message: "Emergency call cancelled" });
+      broadcast({ event: "call-status", status: "cancelled", message: "Emergency alert cancelled" });
     } else {
       log("Already in NORMAL state.");
     }
@@ -247,6 +262,10 @@ function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
   clearTimers();
+  if (activeTelegramCall) {
+    activeTelegramCall.kill();
+    activeTelegramCall = null;
+  }
   if (process.stdin.isTTY && process.stdin.isRaw) process.stdin.setRawMode(false);
   if (lineReader) lineReader.close();
   process.stdin.pause();
@@ -259,7 +278,13 @@ function shutdown() {
 
 function isAllowedBrowserOrigin(origin) {
   if (!origin) return true;
+  if (CONFIG.allowRemote) return true;
   return origin === `http://localhost:${CONFIG.port}` || origin === `http://127.0.0.1:${CONFIG.port}`;
+}
+
+function isAllowedHost(host) {
+  if (CONFIG.allowRemote) return true;
+  return host === `localhost:${CONFIG.port}` || host === `127.0.0.1:${CONFIG.port}`;
 }
 
 function sendJson(response, statusCode, payload) {
@@ -270,6 +295,10 @@ function sendJson(response, statusCode, payload) {
 const server = http.createServer((request, response) => {
   const pathname = new URL(request.url, "http://127.0.0.1").pathname;
   const origin = request.headers.origin;
+  if (!isAllowedHost(request.headers.host || "")) {
+    sendJson(response, 403, { error: "Host is not allowed." });
+    return;
+  }
   if (!isAllowedBrowserOrigin(origin)) {
     sendJson(response, 403, { error: "Origin is not allowed." });
     return;
@@ -281,12 +310,26 @@ const server = http.createServer((request, response) => {
 
   if (request.method === "OPTIONS") {
     response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-SomniSync-Token");
     if (request.headers["access-control-request-private-network"] === "true") {
       response.setHeader("Access-Control-Allow-Private-Network", "true");
     }
     response.writeHead(204);
     response.end();
+    return;
+  }
+
+  if (request.method === "POST" && request.headers["x-somnisync-token"] !== apiToken) {
+    sendJson(response, 403, { error: "Local dashboard token is missing or invalid." });
+    return;
+  }
+
+  if (request.method === "GET" && pathname === "/healthz") {
+    sendJson(response, 200, {
+      ok: true,
+      telegramConfigured: !getTelegramConfigError(),
+      state,
+    });
     return;
   }
 
@@ -302,7 +345,7 @@ const server = http.createServer((request, response) => {
         "X-Content-Type-Options": "nosniff",
         "Referrer-Policy": "same-origin",
       });
-      response.end(html);
+      response.end(html.toString("utf8").replace("__SOMNISYNC_API_TOKEN__", apiToken));
     });
     return;
   }
@@ -370,7 +413,7 @@ const server = http.createServer((request, response) => {
         return;
       }
       if (payload.mode === "live") {
-        const configError = getTwilioConfigError();
+        const configError = getTelegramConfigError();
         if (configError) {
           sendJson(response, 400, { error: `Live calls are unavailable: ${configError}` });
           return;
@@ -382,7 +425,7 @@ const server = http.createServer((request, response) => {
       log(`Emergency call mode set to ${callMode === "live" ? "LIVE" : "DRY RUN"}.`);
       sendJson(response, 200, {
         mode: callMode,
-        liveAvailable: !getTwilioConfigError(),
+        liveAvailable: !getTelegramConfigError(),
         locked: state === "EMERGENCY",
       });
     });
@@ -399,7 +442,7 @@ const server = http.createServer((request, response) => {
       return;
     }
     enterNormal("dashboard cancelled", { broadcastState: false });
-    broadcast({ event: "call-status", status: "cancelled", message: "Emergency call cancelled" });
+    broadcast({ event: "call-status", status: "cancelled", message: "Emergency alert cancelled" });
     sendJson(response, 200, { state, cancelled: true });
     return;
   }
@@ -444,9 +487,9 @@ if (!Number.isInteger(CONFIG.port) || CONFIG.port < 1 || CONFIG.port > 65535) {
   console.error("PORT must be an integer between 1 and 65535.");
   process.exitCode = 1;
 } else {
-  console.log("DRY RUN — no phone calls will be placed. Select a mode in the presenter panel.");
-  server.listen(CONFIG.port, "127.0.0.1", () => {
-    log(`Dashboard event stream ready at http://127.0.0.1:${CONFIG.port}/events`);
+  console.log("DRY RUN — no Telegram calls will be placed. Select a mode in the presenter panel.");
+  server.listen(CONFIG.port, CONFIG.host, () => {
+    log(`Dashboard event server ready at http://${CONFIG.host}:${CONFIG.port}`);
     log(`Open the dashboard at http://127.0.0.1:${CONFIG.port}/`);
     setupKeyboard();
     enterNormal();
