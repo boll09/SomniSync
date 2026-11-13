@@ -4670,13 +4670,15 @@
       },
 
       init() {
-        const isLocalDashboard = window.location.protocol === 'http:' &&
-          ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        this.enabled = isLocalDashboard;
+        const isHttpDashboard = ['http:', 'https:'].includes(window.location.protocol);
+        const apiToken = document.querySelector('meta[name="somnisync-api-token"]')?.content || '';
+        const isBackendDashboard = isHttpDashboard && apiToken && apiToken !== '__SOMNISYNC_API_TOKEN__';
+        this.enabled = isBackendDashboard;
         this.base = '';
-        if (!isLocalDashboard) {
+        if (!isBackendDashboard) {
           const statusLabel = document.getElementById('panelStatusLabel');
-          if (statusLabel) statusLabel.textContent = 'Open local dashboard to connect';
+          if (statusLabel) statusLabel.textContent = 'Open the SomniSync backend dashboard to connect';
+          this.renderCallMode();
           return;
         }
         let es;
