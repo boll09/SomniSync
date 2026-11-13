@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="somnisync-api-token" content="__SOMNISYNC_API_TOKEN__">
   <title>SomniSync - Sleep and heart health</title>
 
   <!-- CDN Libraries -->
@@ -125,7 +126,7 @@
 
     html {
       min-height: 100%;
-      background: radial-gradient(circle at 50% 0%, #101018 0%, #000000 85%);
+      background: #000;
     }
 
     body {
@@ -191,7 +192,7 @@
       background: rgba(10, 132, 255, 0.5);
     }
 
-    /* Tab Panes */
+    /*  Tab Panes */
     .tab-pane {
       display: none;
       animation: tabFadeIn 200ms ease forwards;
@@ -267,14 +268,14 @@
 
     /* Soft beam pulse: transform-origin at band (bottom), scaleY 0.6→1, opacity 0.15→0.35 */
     @keyframes radarConeBreath {
-      0%   { transform: scaleY(0.6);  opacity: 0.15; }
-      50%  { transform: scaleY(1.0);  opacity: 0.35; }
-      100% { transform: scaleY(0.6);  opacity: 0.15; }
+      0%   { transform: scaleY(0.72);  opacity: 0.10; }
+      50%  { transform: scaleY(1.0);  opacity: 0.24; }
+      100% { transform: scaleY(0.72);  opacity: 0.10; }
     }
     .sensor-cone {
       transform-box: fill-box;
       transform-origin: center bottom;
-      animation: radarConeBreath 3.2s ease-in-out infinite;
+      animation: radarConeBreath 4.2s ease-in-out infinite;
       pointer-events: none;
     }
     .sensor-cone.c2 { animation-delay: 1.0s; }
@@ -284,25 +285,42 @@
     /* Rect is 12 px wide so at peak translateX(458) it ends at x=620, inside clip */
     @keyframes scanLineSweep {
       0%   { transform: translateX(0px);   opacity: 0;   }
-      8%   { opacity: 0.5; }
-      50%  { transform: translateX(458px); opacity: 0.5; }
-      92%  { opacity: 0.5; }
+      8%   { opacity: 0.75; }
+      50%  { transform: translateX(458px); opacity: 0.75; }
+      92%  { opacity: 0.75; }
       100% { transform: translateX(0px);   opacity: 0;   }
     }
     .radar-scan-line {
-      animation: scanLineSweep 6s ease-in-out infinite;
+      animation: scanLineSweep 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      filter: drop-shadow(0 0 4px var(--radar-color));
       pointer-events: none;
     }
 
+    @keyframes radarTargetPulse {
+      0%   { transform: scale(0.45); opacity: 0.72; }
+      75%  { transform: scale(1.35); opacity: 0.12; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+    .radar-target-ring {
+      fill: none;
+      stroke: #99f6e4;
+      stroke-width: 0.9;
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: radarTargetPulse 2.8s ease-out infinite;
+    }
+    .radar-target.t2 .radar-target-ring { animation-delay: 0.9s; }
+    .radar-target.t3 .radar-target-ring { animation-delay: 1.8s; }
+
     /* Sound-wave ripple arcs: scale 0.3→1.4, opacity 0.35→0 */
     @keyframes rippleArc {
-      0%   { transform: scale(0.3); opacity: 0.35; }
-      100% { transform: scale(1.4); opacity: 0;    }
+      0%   { transform: scale(0.65); opacity: 0.38; }
+      100% { transform: scale(1.22); opacity: 0;    }
     }
     .radar-ripple {
       transform-box: fill-box;
       transform-origin: center bottom;
-      animation: rippleArc 2.4s ease-out infinite;
+      animation: rippleArc 3s ease-out infinite;
       pointer-events: none;
     }
     .radar-ripple.d1 { animation-delay: 0s;   }
@@ -314,6 +332,7 @@
       .sensor-cone       { animation: none; opacity: 0.15; transform: scaleY(0.8); }
       .radar-scan-line   { animation: none; opacity: 0; }
       .radar-ripple      { animation: none; opacity: 0; }
+      .radar-target-ring { animation: none; opacity: 0.28; }
     }
 
     @keyframes zzzDrift {
@@ -356,7 +375,6 @@
 
 
 
-    #svgSnoreText,
     .zzz-ghost {
       transform-box: fill-box;
       transform-origin: center;
@@ -365,27 +383,28 @@
       filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.35));
     }
 
-    #svgSnoreText {
-      animation: zzzDrift 3.6s ease-in-out infinite;
-    }
-
     .zzz-ghost {
       opacity: 0;
       animation: zzzDrift 3.6s ease-in-out infinite;
     }
 
-    .zzz-ghost.secondary {
-      animation-delay: 0.9s;
-    }
-
-    .zzz-ghost.tertiary {
-      animation-delay: 1.8s;
+    #svgSnoreText {
+      opacity: 0;
     }
 
     #svgSnoreText.warning-mode {
+      opacity: 1;
       animation: zzzAlertPulse 1.4s ease-in-out infinite;
       fill: #f43f5e;
-      filter: drop-shadow(0 0 14px rgba(244, 63, 94, 0.38));
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.45));
+    }
+
+    .zzz-ghost.secondary {
+      animation-delay: 0.55s;
+    }
+
+    .zzz-ghost.tertiary {
+      animation-delay: 1.1s;
     }
 
 
@@ -458,6 +477,192 @@
       height: 100%;
       pointer-events: none;
       z-index: 0;
+      opacity: 0;
+      filter: brightness(1) saturate(1);
+      transition: opacity 900ms ease, filter 900ms ease;
+    }
+
+    body.lamp-login-on #spaceBackgroundCanvas {
+      opacity: 1;
+      filter: brightness(2.15) saturate(1.35) contrast(1.08);
+    }
+
+    body.app-authenticated #spaceBackgroundCanvas {
+      opacity: 1;
+      filter: none;
+    }
+
+    #appContent {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 900ms ease;
+    }
+
+    body.app-authenticated #appContent {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #lampLogin {
+      --lamp-color: #8bdcff;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #000;
+      isolation: isolate;
+      transition: opacity 850ms ease, visibility 850ms ease;
+    }
+    #lampLoginForm[hidden] { display: none !important; }
+
+    @keyframes lampEntrance {
+      from { opacity: 0; transform: translate(-50%, -16px) scale(.97); filter: blur(3px); }
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); filter: blur(0); }
+    }
+    @keyframes promptEntrance {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes lampBloom {
+      0% { opacity: 0; transform: scale(.96); }
+      65% { opacity: 1; transform: scale(1.02); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    #lampLogin::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(ellipse 44% 58% at 50% 22%, rgba(81, 186, 255, .16), transparent 75%);
+      transition: opacity 900ms ease;
+    }
+
+    body.lamp-login-on #lampLogin { background: transparent; }
+    body.lamp-login-on #lampLogin::before { opacity: 1; }
+
+    body.app-authenticated #lampLogin {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .lamp-login-card {
+      position: relative;
+      z-index: 2;
+      width: min(390px, calc(100vw - 36px));
+      margin-top: 150px;
+      padding: 28px;
+      border: 1px solid rgba(139, 220, 255, .25);
+      border-radius: 22px;
+      background: rgba(5, 12, 24, .82);
+      box-shadow: 0 18px 80px rgba(0, 0, 0, .45), 0 0 48px rgba(69, 171, 255, .14);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      color: #eff8ff;
+      opacity: 0;
+      transform: translateY(12px) scale(.98);
+      transition: opacity 760ms cubic-bezier(.2,.75,.25,1), transform 760ms cubic-bezier(.2,.75,.25,1), border-color 760ms ease, box-shadow 760ms ease;
+    }
+
+    body.lamp-login-on .lamp-login-card {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      animation: lampBloom 820ms cubic-bezier(.2,.75,.25,1) both;
+    }
+
+    .lamp-login-card h1 { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -.04em; }
+    .lamp-login-card p { margin: 8px 0 22px; color: #9fb5c9; font-size: 13px; }
+    .lamp-login-card label { display: block; margin: 14px 0 6px; color: #bfd0df; font-size: 12px; font-weight: 600; }
+    .lamp-login-card input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 13px;
+      border: 1px solid rgba(176, 207, 235, .2);
+      border-radius: 11px;
+      outline: none;
+      background: rgba(255,255,255,.055);
+      color: #f3f8ff;
+      font: inherit;
+      font-size: 14px;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+    .lamp-login-card input:focus { border-color: rgba(119, 210, 255, .8); box-shadow: 0 0 0 3px rgba(73, 173, 255, .14); }
+    .lamp-login-submit {
+      width: 100%;
+      min-height: 46px;
+      margin-top: 22px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(105deg, #58baf4, #8b9cff);
+      color: #07111f;
+      font-weight: 750;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(75, 166, 255, .2);
+      transition: filter 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+    .lamp-login-submit:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 11px 30px rgba(75, 166, 255, .3); }
+    .lamp-login-submit:active { transform: translateY(0) scale(.99); }
+    .lamp-login-hint { display: block; margin-top: 13px; color: #71879a; text-align: center; font-size: 11px; }
+
+    .lamp-switch {
+      position: absolute;
+      z-index: 3;
+      top: max(8px, env(safe-area-inset-top));
+      left: 50%;
+      width: 132px;
+      height: 232px;
+      padding: 0;
+      transform: translateX(-50%);
+      transform-origin: center top;
+      animation: lampEntrance 900ms cubic-bezier(.2,.75,.25,1) both;
+      border: 0;
+      background: transparent;
+      cursor: grab;
+      touch-action: none;
+      color: #60748a;
+    }
+    .lamp-switch svg { width: 100%; height: 100%; overflow: visible; }
+    .lamp-pull-target {
+      position: absolute;
+      left: 50%;
+      top: 77.6%;
+      width: 40px;
+      height: 44px;
+      padding: 0;
+      transform: translate(-50%, -50%);
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: grab;
+      touch-action: none;
+    }
+    .lamp-pull-target:active { cursor: grabbing; }
+    .lamp-pull-target:focus-visible { outline: 2px solid #8bdcff; outline-offset: 1px; }
+    .lamp-switch .lamp-shade { fill: #111923; stroke: #334459; stroke-width: 1.5; transition: fill 500ms ease, stroke 500ms ease, filter 500ms ease; }
+    .lamp-switch .lamp-bulb { fill: #2d3a49; transition: fill 500ms ease, filter 500ms ease; }
+    .lamp-switch .lamp-stem, .lamp-switch .lamp-cord { stroke: #52677d; stroke-width: 2; stroke-linecap: round; transition: stroke 500ms ease; }
+    .lamp-switch .lamp-cord { transition: stroke 500ms ease; }
+    #lampPullHandle { transition: none; }
+    .lamp-switch .lamp-pull { fill: #263545; stroke: #647d94; stroke-width: 1.5; transition: fill 500ms ease, stroke 500ms ease, filter 500ms ease; }
+    .lamp-switch .lamp-light { opacity: 0; transform: scale(.96); transform-origin: center top; transition: opacity 800ms ease, transform 900ms cubic-bezier(.2,.75,.25,1); }
+    body.lamp-login-on .lamp-switch .lamp-shade { fill: #273b50; stroke: #8bdcff; filter: drop-shadow(0 0 12px rgba(101, 198, 255, .5)); }
+    body.lamp-login-on .lamp-switch .lamp-bulb { fill: #e4f8ff; filter: drop-shadow(0 0 12px rgba(143, 221, 255, .95)); }
+    body.lamp-login-on .lamp-switch .lamp-stem, body.lamp-login-on .lamp-switch .lamp-cord { stroke: #9fdfff; }
+    body.lamp-login-on .lamp-switch .lamp-pull { fill: #9fdfff; stroke: #e6f8ff; filter: drop-shadow(0 0 8px rgba(143, 221, 255, .8)); }
+    body.lamp-login-on .lamp-switch .lamp-light { opacity: 1; transform: scale(1); }
+    #lampLoginPrompt { animation: promptEntrance 700ms ease 320ms both; }
+
+    @media (max-height: 680px) {
+      .lamp-switch { height: 180px; width: 110px; }
+      .lamp-login-card { margin-top: 105px; padding: 20px 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #lampLogin, #spaceBackgroundCanvas, #appContent, .lamp-login-card, .lamp-login-card *, .lamp-switch * { transition-duration: .01ms !important; }
     }
 
     #appContent header {
@@ -562,6 +767,43 @@
 <body class="text-slate-100 min-h-screen pb-16 selection:bg-teal-400 selection:text-white">
 
   <canvas id="spaceBackgroundCanvas" aria-hidden="true"></canvas>
+  <section id="lampLogin" aria-label="SomniSync sign in">
+    <div id="lampSwitch" class="lamp-switch">
+      <svg viewBox="0 0 132 232" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="lampBeam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#8bdcff" stop-opacity=".26" />
+            <stop offset="1" stop-color="#8bdcff" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path class="lamp-light" d="M37 72 L95 72 L121 196 L11 196 Z" fill="url(#lampBeam)" />
+        <path class="lamp-stem" d="M66 0 V23" />
+        <path class="lamp-shade" d="M38 23 H94 L108 62 Q109 68 102 68 H30 Q23 68 24 62 Z" />
+        <path class="lamp-bulb" d="M56 68 Q56 58 66 58 Q76 58 76 68 L73 75 H59 Z" />
+        <path class="lamp-cord" id="lampCord" d="M66 68 V174" />
+        <circle id="lampPullHandle" class="lamp-pull" cx="66" cy="180" r="7" />
+        <path d="M59 210 Q66 214 73 210" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1" />
+      </svg>
+      <button id="lampPullButton" class="lamp-pull-target" type="button" aria-label="Pull the lamp cord" aria-pressed="false" title="Pull the cord to switch the light"></button>
+    </div>
+
+    <form id="lampLoginForm" class="lamp-login-card" inert>
+      <div class="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.2em] text-sky-200/80">
+        <span class="h-1.5 w-1.5 rounded-full bg-sky-300 shadow-[0_0_10px_#7dd3fc]"></span>
+        SomniSync access
+      </div>
+      <h1>Sleep better, together.</h1>
+      <p>Sign in to open your personal sleep dashboard.</p>
+      <label for="loginUsername">Account</label>
+      <input id="loginUsername" name="username" type="text" autocomplete="username" placeholder="Account name" required>
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+      <button class="lamp-login-submit" type="submit">Open demo dashboard</button>
+      <span id="loginError" role="alert" aria-live="polite" class="hidden mt-3 text-center text-xs text-rose-300"></span>
+      <span class="lamp-login-hint">Visual demo · Credentials are checked in this page only.</span>
+    </form>
+    <p id="lampLoginPrompt" class="absolute bottom-[max(20px,env(safe-area-inset-bottom))] z-[2] px-4 text-center text-xs tracking-wide text-slate-500 transition-opacity duration-500">Pull the lamp cord or tap the lamp to turn on the light</p>
+  </section>
   <div id="appContent">
 
   <!-- Ambient Circadian Aura Glows -->
@@ -654,7 +896,7 @@
             </svg>
             <div>
               <div class="text-xs sm:text-sm font-bold text-rose-200">
-                Emergency call in <span id="statusBarCountdown" class="text-white font-sans tabular-nums font-bold text-base underline">15</span>s
+                Emergency alert in <span id="statusBarCountdown" class="text-white font-sans tabular-nums font-bold text-base underline">15</span>s
               </div>
               <p class="text-xs text-rose-300">High heart rate. Cancel or wait 15 seconds.</p>
             </div>
@@ -663,7 +905,7 @@
             <div class="w-full sm:w-36 h-2 bg-rose-900/60 rounded-full overflow-hidden border border-rose-500/40">
               <div id="statusBarProgress" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%;"></div>
             </div>
-            <button type="button" id="topEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="min-h-11 shrink-0 px-4 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white text-xs font-bold transition" aria-label="Cancel emergency call countdown">
+            <button type="button" id="topEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="min-h-11 shrink-0 px-4 py-2 rounded-lg bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white text-xs font-bold transition" aria-label="Cancel emergency alert countdown">
               Abort / Cancel
             </button>
           </div>
@@ -812,71 +1054,6 @@
               </defs>
 
               <!-- RADAR EFFECTS — all clipped to mattress interior -->
-              <g id="svgRadarCones" clip-path="url(#bedScanClip)" pointer-events="none">
-
-                <!-- ── 3 soft teal beam cones (gradient, transform-origin at band y=152) ── -->
-                <!-- Cone 1: head region x=215 -->
-                <polygon class="sensor-cone c1"
-                  points="215,152 165,80 265,80"
-                  fill="url(#coneGradTeal)" />
-                <!-- Cone 2: torso region x=385, 1 s delay -->
-                <polygon class="sensor-cone c2"
-                  points="385,152 325,80 445,80"
-                  fill="url(#coneGradTeal)" />
-                <!-- Cone 3: legs region x=535, 2 s delay -->
-                <polygon class="sensor-cone c3"
-                  points="535,152 480,80 590,80"
-                  fill="url(#coneGradTeal)" />
-
-                <!-- ── Thin vertical scan cursor sweeping head→feet ── -->
-                <!-- 2 px wide × 50 px tall at y=100; translateX 0→458→0 keeps x in 150–620 (clip x 132–635) -->
-                <rect class="radar-scan-line"
-                  x="150" y="100" width="2" height="50"
-                  fill="#00d4aa" />
-
-                <!-- ── Sound-wave ripple arcs from each sensor node ── -->
-                <!-- Sensor group 1 (~x=165-265, y=147.5) -->
-                <g>
-                  <path class="radar-ripple d1"
-                    d="M 155,147 C 185,125 235,120 275,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d2"
-                    d="M 155,147 C 185,125 235,120 275,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d3"
-                    d="M 155,147 C 185,125 235,120 275,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                </g>
-                <!-- Sensor group 2 (~x=325-445, y=147.5) -->
-                <g>
-                  <path class="radar-ripple d2"
-                    d="M 315,147 C 350,118 415,118 455,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d3"
-                    d="M 315,147 C 350,118 415,118 455,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d1"
-                    d="M 315,147 C 350,118 415,118 455,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                </g>
-                <!-- Sensor group 3 (~x=505-610, y=147.5) -->
-                <g>
-                  <path class="radar-ripple d3"
-                    d="M 495,147 C 525,118 585,118 620,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d1"
-                    d="M 495,147 C 525,118 585,118 620,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="radar-ripple d2"
-                    d="M 495,147 C 525,118 585,118 620,147"
-                    fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-linecap="round" />
-                </g>
-
-                <!-- ── Elliptical ground rings (at sensor band) ── -->
-                <ellipse cx="385" cy="152" rx="90"  ry="10" fill="none" stroke="#00d4aa" stroke-width="1.2" stroke-opacity="0.25" />
-                <ellipse cx="385" cy="152" rx="140" ry="16" fill="none" stroke="#00d4aa" stroke-width="1.0" stroke-opacity="0.14" />
-              </g>
-
               <!-- BODY-SCANNING SONAR — clipped, legacy group renamed, now empty placeholder kept for JS id -->
               <g id="svgBodyRadar" opacity="0"></g>
 
@@ -926,9 +1103,9 @@
                   
                   <!-- Snoring / Status Text Badge -->
                   <g>
-                    <text class="zzz-ghost" x="186" y="76" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">z</text>
-                    <text class="zzz-ghost secondary" x="196" y="74" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">Z</text>
-                    <text class="zzz-ghost tertiary" x="206" y="72" fill="#a78bfa" font-size="12" font-weight="800" font-family="Inter, sans-serif">Z</text>
+                    <text class="zzz-ghost first" x="185" y="78" font-size="8" font-weight="700" font-family="Inter, sans-serif">z</text>
+                    <text class="zzz-ghost secondary" x="194" y="73" font-size="10" font-weight="750" font-family="Inter, sans-serif">z</text>
+                    <text class="zzz-ghost tertiary" x="205" y="67" font-size="13" font-weight="800" font-family="Inter, sans-serif">z</text>
                     <text id="svgSnoreText" x="194" y="78" fill="#a78bfa" font-size="13" font-weight="800" font-family="Inter, sans-serif">Zzz</text>
                   </g>
                 </g>
@@ -951,6 +1128,17 @@
               <!-- BLANKET OVER SLEEPER -->
               <path d="M230,105 C335,101 515,104 618,116 L618,132 L230,132 Z" fill="url(#blanketGrad)" stroke="#475569" stroke-width="0.8" />
 
+              <!-- RADAR OVERLAY: restrained scan fields and three focused sensor returns -->
+              <g id="svgRadarCones" clip-path="url(#bedScanClip)" pointer-events="none">
+                <polygon class="sensor-cone c1" points="215,146 194,107 236,107" fill="url(#coneGradTeal)" />
+                <polygon class="sensor-cone c2" points="385,146 360,107 410,107" fill="url(#coneGradTeal)" />
+                <polygon class="sensor-cone c3" points="535,146 512,107 558,107" fill="url(#coneGradTeal)" />
+                <rect class="radar-scan-line" x="150" y="108" width="1.5" height="38" fill="#00d4aa" />
+                <g class="radar-target" transform="translate(215 139)"><circle class="radar-target-ring" r="7"/><circle r="2" fill="#99f6e4"/></g>
+                <g class="radar-target t2" transform="translate(385 139)"><circle class="radar-target-ring" r="7"/><circle r="2" fill="#99f6e4"/></g>
+                <g class="radar-target t3" transform="translate(535 139)"><circle class="radar-target-ring" r="7"/><circle r="2" fill="#99f6e4"/></g>
+                <path d="M140 151H625" stroke="#99f6e4" stroke-opacity=".3" stroke-width=".7" />
+              </g>
               <!-- LUXURY WOODEN BED FRAME -->
               <rect x="115" y="65" width="16" height="138" rx="4" fill="#3e2723" stroke="#271510" stroke-width="1" />
               <rect x="115" y="151" width="532" height="17" rx="3" fill="#4e342e" stroke="#271510" stroke-width="1" />
@@ -960,8 +1148,8 @@
               <g id="svgSensorCallout">
                 <rect x="460" y="42" width="165" height="26" rx="6" fill="#0d1b2a" stroke="#0a84ff" stroke-width="1.2" />
                 <text x="542" y="59" fill="#0a84ff" font-size="12" font-weight="700" text-anchor="middle">Contact-free sensor</text>
-                <line x1="510" y1="68" x2="510" y2="145" stroke="#0a84ff" stroke-width="1.2" stroke-dasharray="3,3" />
-                <line x1="570" y1="68" x2="570" y2="145" stroke="#0a84ff" stroke-width="1.2" stroke-dasharray="3,3" />
+                <line x1="542" y1="68" x2="542" y2="96" stroke="#38bdf8" stroke-width="1" stroke-dasharray="2,3" stroke-opacity=".75" />
+                <circle cx="542" cy="98" r="2" fill="#38bdf8" fill-opacity=".85" />
               </g>
             </svg>
 
@@ -1934,7 +2122,7 @@
       </div>
 
       <fieldset id="callModeControls" class="space-y-1.5" disabled>
-        <legend class="text-xs font-bold text-slate-400 mb-1">Emergency call mode</legend>
+        <legend class="text-xs font-bold text-slate-400 mb-1">Telegram emergency call</legend>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <label class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-slate-300 has-[:checked]:border-amber-400/50 has-[:checked]:bg-amber-500/10 cursor-pointer">
             <input id="callModeDryRun" type="radio" name="callMode" value="dry-run" checked onchange="SimBridge.setCallMode(this.value)" class="accent-amber-400">
@@ -1942,10 +2130,10 @@
           </label>
           <label id="callModeLiveLabel" class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-slate-300 has-[:checked]:border-rose-400/50 has-[:checked]:bg-rose-500/10 cursor-pointer">
             <input id="callModeLive" type="radio" name="callMode" value="live" disabled onchange="SimBridge.setCallMode(this.value)" class="accent-rose-400">
-            <span>Live call</span>
+            <span>Telegram call</span>
           </label>
         </div>
-        <p id="callModeHelp" class="text-xs leading-snug text-slate-500" role="status" aria-live="polite">Dry-run is selected. No phone call will be placed.</p>
+        <p id="callModeHelp" class="text-xs leading-snug text-slate-500" role="status" aria-live="polite">Dry-run is selected. No Telegram call will be placed.</p>
       </fieldset>
 
       <!-- 2 Big Action Buttons -->
@@ -1967,8 +2155,8 @@
         <div class="w-full h-1.5 bg-rose-900 rounded-full overflow-hidden">
           <div id="panelCountdownBar" class="h-full bg-rose-500 transition-all duration-1000" style="width: 100%"></div>
         </div>
-        <button type="button" id="panelEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="w-full min-h-11 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold transition" aria-label="Cancel emergency call countdown">
-          Cancel emergency call
+        <button type="button" id="panelEmergencyCancelBtn" onclick="StateMachine.cancelEmergency()" class="w-full min-h-11 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold transition" aria-label="Cancel emergency alert countdown">
+          Cancel emergency alert
         </button>
       </div>
       <p id="panelCallStatus" class="hidden text-xs leading-tight text-slate-300" role="status" aria-live="polite"></p>
@@ -3348,7 +3536,12 @@
         this.updateCountdownDisplays(remaining);
 
         if (remaining === 0) {
-          SimBridge.showCallStatus('placing', 'Countdown complete · waiting for device');
+          if (!SimBridge.connected) {
+            SimBridge.showCallStatus('dry-run', 'Demo: no Telegram call was made (backend unavailable).');
+            this.startAutoPilot();
+          } else {
+            SimBridge.showCallStatus('placing', 'Countdown complete · placing emergency call…');
+          }
           return;
         }
 
@@ -3362,7 +3555,12 @@
           } else {
             clearInterval(this.countdownInterval);
             this.countdownInterval = null;
-            SimBridge.showCallStatus('placing', 'Countdown complete · waiting for device');
+            if (!SimBridge.connected) {
+              SimBridge.showCallStatus('dry-run', 'Demo: no Telegram call was made (backend unavailable).');
+              this.startAutoPilot();
+            } else {
+              SimBridge.showCallStatus('placing', 'Countdown complete · placing emergency call…');
+            }
           }
         }, 1000);
       },
@@ -3510,9 +3708,9 @@
           this.cancelPending = false;
           this.setCancelPending(false);
           if (result.cancelled) {
-            SimBridge.showCallStatus('cancelled', 'Emergency call cancelled');
+            SimBridge.showCallStatus('cancelled', 'Emergency alert cancelled');
           } else if (result.state === 'AUTOPILOT') {
-            Toast.show('The emergency call has already started and cannot be canceled.', 'warning');
+            Toast.show('The emergency alert has already been sent and cannot be canceled.', 'warning');
             this.setState('autopilot', { fromBridge: true });
           } else if (result.state !== 'NORMAL') {
             Toast.show('The local alarm stopped, but the backend did not confirm cancellation.', 'warning');
@@ -3521,7 +3719,7 @@
           this.cancelPending = false;
           this.setCancelPending(false);
           SimBridge.showCallStatus('error', 'Dashboard alarm stopped · backend cancellation unconfirmed');
-          Toast.show(`Dashboard alarm stopped, but the backend could not confirm call cancellation: ${error.message}`, 'warning');
+          Toast.show(`Dashboard alarm stopped, but the backend could not confirm alert cancellation: ${error.message}`, 'warning');
         });
       },
 
@@ -3530,7 +3728,7 @@
           const button = document.getElementById(id);
           if (!button) return;
           button.disabled = pending;
-          button.textContent = pending ? 'Cancelling…' : id === 'topEmergencyCancelBtn' ? 'Abort / Cancel' : 'Cancel emergency call';
+          button.textContent = pending ? 'Cancelling…' : id === 'topEmergencyCancelBtn' ? 'Abort / Cancel' : 'Cancel emergency alert';
           button.classList.toggle('opacity-60', pending);
           button.classList.toggle('cursor-wait', pending);
         });
@@ -4370,7 +4568,10 @@
         const request = this.stateRequest.then(async () => {
           const response = await fetch(`${this.base}${path}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-SomniSync-Token': document.querySelector('meta[name="somnisync-api-token"]')?.content || ''
+            },
             body: payload === undefined ? undefined : JSON.stringify(payload)
           });
           let result = {};
@@ -4418,14 +4619,14 @@
         controls.disabled = !this.connected || isLocked;
         if (mode === 'live') {
           help.textContent = StateMachine.currentState === 'autopilot'
-            ? 'Live calls apply to the next alert. Switch to dry-run here before the next alert.'
-            : 'After 15 seconds, Twilio will call the verified recipient using its standard trial voice prompt.';
+            ? 'Telegram calls apply to the next alert. Switch to dry-run before the next alert.'
+            : 'After 15 seconds, a Telegram user-to-user call will play the emergency voice alert. It cannot dial regular phone numbers.';
           help.className = 'text-xs leading-snug text-rose-300';
         } else if (!liveAvailable) {
-          help.textContent = `Dry-run selected. Live calls unavailable: ${reason || 'Twilio credentials are not configured on the server.'}`;
+          help.textContent = `Dry-run selected. Telegram calls unavailable: ${reason || 'Telegram user API access and a signed-in sender account are not configured on the server.'}`;
           help.className = 'text-xs leading-snug text-amber-300';
         } else {
-          help.textContent = 'Dry-run is selected. No phone call will be placed.';
+          help.textContent = 'Dry-run is selected. No Telegram call will be placed.';
           help.className = 'text-xs leading-snug text-slate-400';
         }
       },
@@ -4517,7 +4718,7 @@
               StateMachine.setState('normal', { fromBridge: true });
             }
             this.renderCallMode();
-            this.showCallStatus('cancelled', 'Emergency call cancelled');
+            this.showCallStatus('cancelled', 'Emergency alert cancelled');
           } else if (d.event === 'autopilot') {
             if (StateMachine.currentState !== 'autopilot') {
               StateMachine.setState('autopilot', { fromBridge: true });
@@ -4545,7 +4746,153 @@
     /* =====================================================================
        14. INITIALIZATION
        ===================================================================== */
+    const LampLogin = {
+      enabled: false,
+      form: null,
+      switchButton: null,
+      pullButton: null,
+      pullStart: null,
+      dragHandled: false,
+      pullDistance: 0,
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+      velocityX: 0,
+      velocityY: 0,
+      animationFrame: 0,
+
+      init() {
+        this.form = document.getElementById('lampLoginForm');
+        this.switchButton = document.getElementById('lampSwitch');
+        this.pullButton = document.getElementById('lampPullButton');
+        this.cord = document.getElementById('lampCord');
+        this.pullHandle = document.getElementById('lampPullHandle');
+        if (!this.form || !this.switchButton || !this.pullButton) return;
+
+        this.pullButton.addEventListener('pointerdown', event => {
+          this.pullStart = this.pointerSvgPoint(event);
+          this.pullDistance = 0;
+          this.dragHandled = false;
+          this.pullButton.setPointerCapture(event.pointerId);
+        });
+        this.pullButton.addEventListener('pointerup', event => {
+          if (this.pullStart === null) return;
+          const point = this.pointerSvgPoint(event);
+          const pulled = Math.hypot(point.x - this.pullStart.x, point.y - this.pullStart.y);
+          this.pullStart = null;
+          this.dragHandled = true;
+          if (pulled > 26) {
+            this.toggle();
+          }
+          this.resetCord();
+        });
+        this.pullButton.addEventListener('pointermove', event => {
+          if (this.pullStart === null) return;
+          const point = this.pointerSvgPoint(event);
+          const dx = point.x - this.pullStart.x;
+          const dy = point.y - this.pullStart.y;
+          const distance = Math.hypot(dx, dy);
+          const scale = distance > 52 ? 52 / distance : 1;
+          const pullX = dx * scale;
+          const pullY = dy * scale;
+          this.pullDistance = Math.hypot(pullX, pullY);
+          this.targetX = pullX;
+          this.targetY = pullY;
+          this.animateCord();
+        });
+        this.pullButton.addEventListener('pointercancel', () => {
+          this.pullStart = null;
+          this.resetCord();
+        });
+        this.pullButton.addEventListener('click', event => {
+          if (this.dragHandled) {
+            this.dragHandled = false;
+            event.preventDefault();
+            return;
+          }
+          this.toggle();
+        });
+
+        this.form.addEventListener('submit', event => {
+          event.preventDefault();
+          if (!this.enabled || !this.form.reportValidity()) return;
+          const username = document.getElementById('loginUsername').value;
+          const password = document.getElementById('loginPassword').value;
+          const error = document.getElementById('loginError');
+          if (username !== 'somnisync' || password !== '123') {
+            error.textContent = 'Account hoặc mật khẩu chưa đúng.';
+            error.classList.remove('hidden');
+            return;
+          }
+          error.classList.add('hidden');
+          document.getElementById('loginPassword').value = '';
+          this.form.inert = true;
+          document.body.classList.remove('lamp-login-on');
+          document.body.classList.add('app-authenticated');
+        });
+      },
+
+      pointerSvgPoint(event) {
+        const rect = this.switchButton.getBoundingClientRect();
+        return {
+          x: (event.clientX - rect.left) * (132 / rect.width),
+          y: (event.clientY - rect.top) * (232 / rect.height)
+        };
+      },
+
+      resetCord() {
+        this.targetX = 0;
+        this.targetY = 0;
+        this.pullDistance = 0;
+        this.animateCord();
+      },
+
+      animateCord() {
+        if (this.animationFrame) return;
+        const tick = () => {
+          const stiffness = 0.19;
+          const damping = 0.72;
+          this.velocityX = (this.velocityX + (this.targetX - this.currentX) * stiffness) * damping;
+          this.velocityY = (this.velocityY + (this.targetY - this.currentY) * stiffness) * damping;
+          this.currentX += this.velocityX;
+          this.currentY += this.velocityY;
+          this.pullHandle.setAttribute('cx', String(66 + this.currentX));
+          this.pullHandle.setAttribute('cy', String(180 + this.currentY));
+          this.cord.setAttribute('d', `M66 68 C66 112 ${66 + this.currentX * .2} ${145 + this.currentY * .25} ${66 + this.currentX} ${180 + this.currentY}`);
+
+          const resting = Math.abs(this.targetX - this.currentX) < .08
+            && Math.abs(this.targetY - this.currentY) < .08
+            && Math.abs(this.velocityX) < .08
+            && Math.abs(this.velocityY) < .08;
+          if (resting) {
+            this.currentX = this.targetX;
+            this.currentY = this.targetY;
+            this.velocityX = 0;
+            this.velocityY = 0;
+            this.pullHandle.setAttribute('cx', String(66 + this.currentX));
+            this.pullHandle.setAttribute('cy', String(180 + this.currentY));
+            this.cord.setAttribute('d', `M66 68 C66 112 ${66 + this.currentX * .2} ${145 + this.currentY * .25} ${66 + this.currentX} ${180 + this.currentY}`);
+            this.animationFrame = 0;
+          } else {
+            this.animationFrame = requestAnimationFrame(tick);
+          }
+        };
+        this.animationFrame = requestAnimationFrame(tick);
+      },
+
+      toggle() {
+        this.enabled = !this.enabled;
+        document.body.classList.toggle('lamp-login-on', this.enabled);
+        this.pullButton.setAttribute('aria-pressed', String(this.enabled));
+        this.pullButton.setAttribute('aria-label', this.enabled ? 'Pull the cord to turn the lamp off' : 'Pull the cord to turn the lamp on');
+        this.form.inert = !this.enabled;
+        document.getElementById('lampLoginPrompt').style.opacity = this.enabled ? '0' : '1';
+      }
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
+      LampLogin.init();
       SpaceBackground.init();
       Charts.init();
       BioScanner.initControls();
