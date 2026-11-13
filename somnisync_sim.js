@@ -114,7 +114,7 @@ function getTelegramConfigError() {
   if (!/^\d+$/.test(CONFIG.telegramApiId)) return "Telegram API ID is missing or invalid.";
   if (!/^[0-9a-fA-F]{32}$/.test(CONFIG.telegramApiHash)) return "Telegram API hash is missing or invalid.";
   if (!/^@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(CONFIG.telegramCallTo)) return "Recipient must be a Telegram @username.";
-  if (!fs.existsSync(CONFIG.pythonPath)) return `Telegram Python runtime was not found at ${CONFIG.pythonPath}.`;
+  if (path.isAbsolute(CONFIG.pythonPath) && !fs.existsSync(CONFIG.pythonPath)) return `Telegram Python runtime was not found at ${CONFIG.pythonPath}.`;
   if (!CONFIG.telegramSessionString && !fs.existsSync(CONFIG.telegramSessionPath)) return "The Telegram sender account has not been signed in yet. Set TELEGRAM_SESSION_STRING or provide a session file.";
   if (!fs.existsSync(CONFIG.telegramAlertFile)) return "The emergency WAV file is missing.";
   if (!fs.existsSync(CONFIG.telegramCallScript)) return "telegram_voice_call.py is missing.";
